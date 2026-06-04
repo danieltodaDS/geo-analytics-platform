@@ -9,6 +9,11 @@
 - Criados: `docs/understanding/ibge.md`, `specs/ingestion/ibge.md` (Pydantic models, Tenacity, edge cases)
 - Criados: ADRs 001–006, README, `docs/conventions.md`, `docs/sources.md`, `docs/data_quality.md`
 - Decisões: `RAW_BASE_PATH` controla destino local vs GCS; SIDRA raw armazena chaves internas (rename é do staging); commits atômicos por unidade lógica
-- Próximo: produtizar Feature 2 IBGE — fase 4a (`ibge_localidades.py` + `ibge_censo.py`, Parquet local, testes unitários)
+
+**2026-06-04 (continuação)**
+- Feature 2A concluída: `ibge_localidades.py`, `ibge_censo.py`, `test_ibge.py` (14 testes, todos passando)
+- Convenção uv adicionada ao CLAUDE.md e conventions.md; dependências instaladas via `uv add`
+- Decisões: falha em qualquer tabela SIDRA aborta o run inteiro (write parcial é pior que sem write)
+- Próximo: Feature 2B — carregar Parquet local no BigQuery via `bq load`, dbt contra BigQuery
 
 ---
