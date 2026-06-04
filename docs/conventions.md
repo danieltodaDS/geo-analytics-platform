@@ -5,6 +5,22 @@
 
 ---
 
+## Ambiente e Gerenciamento de Pacotes
+
+O projeto usa **uv** para gerenciar ambiente virtual e dependências.
+
+| Operação | Comando |
+|---|---|
+| Instalar pacote de produção | `uv add <pacote>` |
+| Instalar pacote de dev | `uv add --dev <pacote>` |
+| Rodar script Python | `uv run python ingestion/src/<script>.py` |
+| Rodar testes | `uv run pytest` |
+| Sincronizar ambiente após pull | `uv sync` |
+
+**Nunca usar `pip install` diretamente.** Toda dependência nova vai para `pyproject.toml` via `uv add` e é refletida em `uv.lock`.
+
+---
+
 ## Nomenclatura — Scripts de Ingestão
 
 ```

@@ -13,6 +13,15 @@ Antes de gerar código de produção, leia a spec correspondente em /specs.
 ## Stack
 Python 3.11, dbt Core, BigQuery, GCS, Streamlit, Terraform
 
+## Ambiente e pacotes
+- Gerenciador de ambiente e dependências: **uv**
+- Instalar pacote: `uv add <pacote>`
+- Instalar dependência de dev: `uv add --dev <pacote>`
+- Rodar script: `uv run python <script>`
+- Rodar testes: `uv run pytest`
+- Sincronizar ambiente: `uv sync`
+- **Nunca usar `pip install` diretamente** — sempre `uv add`
+
 ## Convenções obrigatórias
 - Pydantic para validação de schema em toda ingestão
 - Tenacity para retry em toda chamada de API
