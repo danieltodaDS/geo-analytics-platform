@@ -92,27 +92,35 @@ Ambientes: `prod`, `dev`. Nunca criar dataset sem prefixo de ambiente.
 
 ---
 
-## Nomenclatura — GCS
+## Nomenclatura — Paths da Raw Layer
 
-### Paths da Raw Layer
+O padrão de path é o mesmo em todas as fases. O que muda é a raiz:
 
-```
-raw/{fonte}/year={YYYY}/month={MM}/day={DD}/data.parquet
-```
-
-| Fonte | Path |
+| Fase | Raiz |
 |---|---|
-| IBGE Localidades | `raw/ibge_localidades/year=X/month=X/day=X/data.parquet` |
-| IBGE Censo 9606 | `raw/ibge_censo_9606/year=X/month=X/day=X/data.parquet` |
-| IBGE Censo 9605 | `raw/ibge_censo_9605/year=X/month=X/day=X/data.parquet` |
-| IBGE Censo 9514 | `raw/ibge_censo_9514/year=X/month=X/day=X/data.parquet` |
-| BCB PIX | `raw/bcb_pix/year=X/month=X/day=X/data.parquet` |
-| Olist | `raw/olist/year=X/month=X/day=X/data.parquet` |
+| Local A (sem cloud) | `data/raw/` — filesystem local |
+| Local B + Remoto | `gs://{GCS_BUCKET}/raw/` — Google Cloud Storage |
+
+### Estrutura do path (igual em todas as fases)
+
+```
+{raiz}/{fonte}/year={YYYY}/month={MM}/day={DD}/data.parquet
+```
+
+| Fonte | Path relativo |
+|---|---|
+| IBGE Localidades | `ibge_localidades/year=X/month=X/day=X/data.parquet` |
+| IBGE Censo 9606 | `ibge_censo_9606/year=X/month=X/day=X/data.parquet` |
+| IBGE Censo 9605 | `ibge_censo_9605/year=X/month=X/day=X/data.parquet` |
+| IBGE Censo 9514 | `ibge_censo_9514/year=X/month=X/day=X/data.parquet` |
+| BCB PIX | `bcb_pix/year=X/month=X/day=X/data.parquet` |
+| Olist | `olist/year=X/month=X/day=X/data.parquet` |
 
 Regras:
 - `month` e `day` sempre com dois dígitos zero-padded (`month=06`, não `month=6`)
 - Data = data de execução do script (UTC), não data do dado
 - Arquivo sempre chamado `data.parquet` — a partição está no path, não no nome
+- O destino (local vs GCS) é controlado pela variável de ambiente `RAW_BASE_PATH`
 
 ---
 
