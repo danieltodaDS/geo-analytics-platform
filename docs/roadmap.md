@@ -42,17 +42,24 @@ Itens exploratórios e de baixa prioridade
 
 ### Definição de Pronto — v1
 
-A v1 só está concluída quando o projeto estiver rodando de ponta a ponta em ambos os ambientes.
+A v1 só está concluída quando o projeto estiver rodando de ponta a ponta nas três etapas abaixo. Cada etapa é pré-requisito da seguinte.
 
-**Local:**
+**Local — Fase A (sem dependência de cloud):**
 - Scripts de ingestão rodam via `make pipeline`
-- dbt roda localmente contra o BigQuery
+- Parquet salvo no filesystem local (`data/raw/`)
+- dbt roda localmente contra os arquivos Parquet locais
 - Testes dbt passam
+
+**Local — Fase B (warehouse real, execução local):**
+- Scripts de ingestão continuam rodando via `make pipeline`
+- Parquet salvo no filesystem local
+- dbt roda localmente contra o BigQuery
+- Testes dbt passam contra o BigQuery
 
 **Remoto (GCP):**
 - Ingestão via Cloud Run Jobs
 - Orquestração via Cloud Scheduler
-- Dados no BigQuery — raw → staging → intermediate → mart
+- Parquet no GCS → BigQuery — raw → staging → intermediate → mart
 - IaC via Terraform provisionado
 - CI/CD via GitHub Actions ativo
 
@@ -65,11 +72,16 @@ Nenhum componente é opcional para considerar a v1 entregue.
 Toda feature segue quatro etapas:
 
 ```
-Explorar   → notebook, entende o dado de verdade
-Entender   → documenta o que aprendeu
-Especificar → escreve a spec (só após exploração)
-Produtizar  → implementa com Claude Code + testes
+Explorar      → notebook, entende o dado de verdade
+Entender      → documenta o que aprendeu
+Especificar   → escreve a spec (só após exploração)
+Produtizar
+  4a. Local A → script salva Parquet local, dbt roda contra arquivos locais
+  4b. Local B → script salva Parquet local, dbt roda contra BigQuery
+  4c. Remoto  → Cloud Run + GCS + BigQuery em produção
 ```
+
+A produtização segue essa progressão em todas as features. Fase 4a valida a lógica sem dependência de cloud. Fase 4b valida a integração com o warehouse. Fase 4c é o deploy.
 
 ---
 
@@ -264,32 +276,36 @@ Cobre Localidades e Censo 2022 — duas APIs distintas no mesmo domínio.
 ### Ordem de Construção — v1
 
 ```
-Infraestrutura e documentação
-1.  README + escopo
-2.  ADRs
-3.  docs/conventions.md + docs/sources.md + docs/data_quality.md
-4.  Terraform — infraestrutura GCP
+Documentação
+1. README + escopo
+2. ADRs
+3. docs/conventions.md + docs/sources.md + docs/data_quality.md
 
-Ingestão
-5.  Feature 1 — Ingestão Fontes de Negócio (Olist)
-6.  Feature 2 — Ingestão IBGE (Localidades + Censo 2022)
-7.  Feature 3 — Ingestão BCB PIX
+--- Local A — sem dependência de cloud ---
+4.  Feature 1 — Ingestão Olist           (4a: Parquet local)
+5.  Feature 2 — Ingestão IBGE            (4a: Parquet local)
+6.  Feature 3 — Ingestão BCB PIX         (4a: Parquet local)
+7.  Feature 4 — dbt Staging              (4a: dbt contra arquivos locais)
+8.  Feature 5 — dbt Intermediate         (4a: dbt contra arquivos locais)
+9.  Feature 6 — dbt Marts               (4a: dbt contra arquivos locais)
+10. Feature 7 — Qualidade com Elementary (4a)
 
-Transformação e qualidade
-8.  Feature 4 — dbt Staging
-9.  Feature 5 — dbt Intermediate
-10. Feature 6 — dbt Marts
-11. Feature 7 — Qualidade com Elementary
+--- Local B — dbt contra BigQuery ---
+11. Features 1–7                         (4b: mesmos scripts, dbt → BigQuery)
 
-Deploy
-12. Feature 8 — CI/CD GitHub Actions
+--- Preparação para remoto ---
+12. Terraform — provisiona infraestrutura GCP
+13. Feature 8 — CI/CD GitHub Actions
 
-Visualização
-13. Feature 9 — Streamlit
+--- Remoto — GCP em produção ---
+14. Features 1–7                         (4c: Cloud Run + GCS + BigQuery)
+15. Feature 9 — Streamlit
 
 Documentação final
-14. Documentar prompts Claude Code usados
+16. Documentar prompts Claude Code usados
 ```
+
+> O Terraform entra só quando o pipeline está validado no Local B — você já sabe exatamente o que precisa provisionar.
 
 ---
 
@@ -552,12 +568,10 @@ Itens com potencial mas sem prioridade definida. Avaliados oportunisticamente ap
 
 ```
 FASE 1 — v1: Geo Analytics Platform
-├── Ingestão: Olist + IBGE (Localidades + Censo) + BCB PIX
-├── Raw Layer no GCS
-├── dbt staging + intermediate + marts
-├── mart_geo_lift pronto
-├── Qualidade com Elementary
-├── CI/CD + Terraform
+├── Local A: ingestão + dbt completos sem cloud
+├── Local B: mesmos scripts, dbt → BigQuery
+├── Terraform + CI/CD
+├── Remoto: Cloud Run + GCS + BigQuery em produção
 ├── Streamlit — visualização dos dados preparados
 └── v1 em produção local + GCP ← critério de conclusão
 
