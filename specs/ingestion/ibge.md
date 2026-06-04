@@ -17,22 +17,37 @@ Dois scripts independentes:
 
 ---
 
-## Variáveis de ambiente obrigatórias
+## Fases de Produtização
 
-| Variável | Uso |
-|---|---|
-| `GCS_BUCKET` | Nome do bucket (sem `gs://`) |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Resolvido automaticamente pelo SDK GCP — não injetar no código |
+Os scripts são implementados uma vez e executados nas três fases progressivas. O que muda entre fases é o destino do Parquet, não a lógica dos scripts.
+
+| Fase | O que muda | `RAW_BASE_PATH` |
+|---|---|---|
+| **4a — Local A** | Scripts gravam Parquet em `data/raw/` local. dbt roda contra arquivos locais. Sem dependência de cloud. | `data/raw` |
+| **4b — Local B** | Scripts gravam Parquet em `data/raw/` local (inalterado). Parquet é carregado no BigQuery via `bq load`. dbt roda contra BigQuery. | `data/raw` |
+| **4c — Remoto** | Scripts rodam em Cloud Run. Parquet gravado diretamente no GCS. BigQuery carrega do GCS. dbt roda contra BigQuery. | `gs://{GCS_BUCKET}/raw` |
+
+**Critério para avançar de fase:** cada fase só inicia após a anterior passar em todos os testes.
 
 ---
 
-## Paths de saída — GCS
+## Variáveis de ambiente
+
+| Variável | Fases | Uso |
+|---|---|---|
+| `RAW_BASE_PATH` | 4a, 4b, 4c | Raiz do path de saída. `data/raw` (local) ou `gs://{GCS_BUCKET}/raw` (GCS) |
+| `GCS_BUCKET` | 4c | Nome do bucket GCS (sem `gs://`) — usado para montar `RAW_BASE_PATH` em produção |
+| `GOOGLE_APPLICATION_CREDENTIALS` | 4b, 4c | Resolvido automaticamente pelo SDK GCP — não injetar no código |
+
+---
+
+## Paths de saída
 
 ```
-gs://{GCS_BUCKET}/raw/ibge_localidades/year={YYYY}/month={MM}/day={DD}/data.parquet
-gs://{GCS_BUCKET}/raw/ibge_censo_9606/year={YYYY}/month={MM}/day={DD}/data.parquet
-gs://{GCS_BUCKET}/raw/ibge_censo_9605/year={YYYY}/month={MM}/day={DD}/data.parquet
-gs://{GCS_BUCKET}/raw/ibge_censo_9514/year={YYYY}/month={MM}/day={DD}/data.parquet
+{RAW_BASE_PATH}/ibge_localidades/year={YYYY}/month={MM}/day={DD}/data.parquet
+{RAW_BASE_PATH}/ibge_censo_9606/year={YYYY}/month={MM}/day={DD}/data.parquet
+{RAW_BASE_PATH}/ibge_censo_9605/year={YYYY}/month={MM}/day={DD}/data.parquet
+{RAW_BASE_PATH}/ibge_censo_9514/year={YYYY}/month={MM}/day={DD}/data.parquet
 ```
 
 - `YYYY/MM/DD` = data de execução do script (UTC)
@@ -45,7 +60,7 @@ gs://{GCS_BUCKET}/raw/ibge_censo_9514/year={YYYY}/month={MM}/day={DD}/data.parqu
 
 ### Responsabilidade
 
-Coletar todos os municípios da API de Localidades, validar o schema via Pydantic e gravar em Parquet no GCS.
+Coletar todos os municípios da API de Localidades, validar o schema via Pydantic e gravar em Parquet no destino definido por `RAW_BASE_PATH`.
 
 ### Endpoint
 
@@ -140,7 +155,7 @@ def _retryable(exc: BaseException) -> bool:
 | Início da coleta | `info` | — |
 | Fetch concluído | `info` | `total_municipios` |
 | Volume abaixo do esperado | `warning` | `total`, `minimo_esperado=5500` |
-| Upload GCS concluído | `info` | `gcs_path` |
+| Parquet gravado | `info` | `destino_path` |
 | Erro fatal | `error` | `exc_info=True` |
 
 ### Guarda de volume
@@ -153,7 +168,7 @@ Se `len(records) < 5500`: logar `warning` e continuar — não abortar. O IBGE p
 
 ### Responsabilidade
 
-Coletar as três tabelas do Censo 2022 via SIDRA, validar via Pydantic e gravar um Parquet por tabela no GCS.
+Coletar as três tabelas do Censo 2022 via SIDRA, validar via Pydantic e gravar um Parquet por tabela no destino definido por `RAW_BASE_PATH`.
 
 ### Endpoints
 
@@ -223,7 +238,7 @@ Mesma configuração do `ibge_localidades.py`. Aplicar o decorator na função d
 | Início da coleta de uma tabela | `info` | `tabela` |
 | Fetch concluído | `info` | `tabela`, `total_registros` |
 | Volume abaixo do esperado | `warning` | `tabela`, `total`, `minimo_esperado=11000` |
-| Upload GCS concluído | `info` | `tabela`, `gcs_path` |
+| Parquet gravado | `info` | `tabela`, `destino_path` |
 | Erro fatal em uma tabela | `error` | `tabela`, `exc_info=True` |
 
 ### Guarda de volume
