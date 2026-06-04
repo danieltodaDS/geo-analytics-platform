@@ -5,6 +5,17 @@
 
 ---
 
+## Convenção de Path
+
+`{RAW_BASE_PATH}` é definido por variável de ambiente e varia por fase:
+
+| Fase | Valor de `RAW_BASE_PATH` |
+|---|---|
+| Local A (sem cloud) | `data/raw` |
+| Local B + Remoto | `gs://{GCS_BUCKET}/raw` |
+
+---
+
 ## Resumo
 
 | Fonte | Frequência | SLA | Tolerância | Status v1 |
@@ -27,7 +38,7 @@
 | **SLA** | Não aplicável — carga batch única |
 | **Tolerância** | Não aplicável |
 | **Owner no pipeline** | `ingestion/src/olist.py` |
-| **Raw path** | `raw/olist/year=X/month=X/day=X/data.parquet` |
+| **Raw path** | `{RAW_BASE_PATH}/olist/year=X/month=X/day=X/data.parquet` |
 
 **Nota de gap temporal:** Os dados cobrem 2015–2018. As covariáveis municipais têm referências mais recentes (Censo 2022, PIX 2020+). Esse gap é uma premissa documentada — covariáveis entram como perfil municipal atual, não como variáveis do período do experimento.
 
@@ -46,7 +57,7 @@
 | **SLA** | Não aplicável — base de referência, não série temporal |
 | **Tolerância** | Não aplicável |
 | **Owner no pipeline** | `ingestion/src/ibge_localidades.py` |
-| **Raw path** | `raw/ibge_localidades/year=X/month=X/day=X/data.parquet` |
+| **Raw path** | `{RAW_BASE_PATH}/ibge_localidades/year=X/month=X/day=X/data.parquet` |
 
 **Freshness dbt:**
 ```yaml
@@ -72,7 +83,7 @@ Base estável — freshnesse longa é esperada e normal.
 | **SLA** | Não aplicável — referência decenal |
 | **Tolerância** | Não aplicável |
 | **Owner no pipeline** | `ingestion/src/ibge_censo.py` |
-| **Raw paths** | `raw/ibge_censo_9606/...`, `raw/ibge_censo_9605/...`, `raw/ibge_censo_9514/...` |
+| **Raw paths** | `{RAW_BASE_PATH}/ibge_censo_9606/...`, `{RAW_BASE_PATH}/ibge_censo_9605/...`, `{RAW_BASE_PATH}/ibge_censo_9514/...` |
 
 **Freshness dbt:**
 ```yaml
@@ -96,7 +107,7 @@ freshness:
 | **SLA** | Dia 15 do mês seguinte ao período de referência |
 | **Tolerância** | 3 dias corridos após o SLA (dia 18) |
 | **Owner no pipeline** | `ingestion/src/bcb_pix.py` |
-| **Raw path** | `raw/bcb_pix/year=X/month=X/day=X/data.parquet` |
+| **Raw path** | `{RAW_BASE_PATH}/bcb_pix/year=X/month=X/day=X/data.parquet` |
 
 **Freshness dbt:**
 ```yaml
