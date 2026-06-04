@@ -94,30 +94,39 @@ Visualização — Streamlit
 
 ---
 
-## Como Rodar Localmente
+## Como Rodar
 
-### Pré-requisitos
+O pipeline segue uma progressão em três fases. Cada fase é pré-requisito da seguinte.
+
+### Local A — sem dependência de cloud
+
+Valida toda a lógica do pipeline sem criar nenhum recurso GCP.
 
 ```bash
-# Autenticação GCP
+make pipeline    # ingestão → Parquet em data/raw/ + dbt contra arquivos locais
+make ingest      # apenas ingestão
+make transform   # apenas dbt
+make test        # pytest + dbt test
+```
+
+### Local B — dbt contra BigQuery
+
+Mesmos scripts de ingestão. dbt passa a rodar contra o BigQuery real.
+
+```bash
+# Pré-requisito
 gcloud auth application-default login
 
-# Variáveis de ambiente
-export GCS_BUCKET=seu-bucket
+make pipeline    # Parquet local + dbt → BigQuery
 ```
 
-### Pipeline completo
+### Remoto — GCP em produção
+
+Após Local B validado e Terraform provisionado.
 
 ```bash
-make pipeline
-```
-
-### Steps individuais
-
-```bash
-make ingest      # apenas ingestão
-make transform   # apenas dbt run
-make test        # pytest + dbt test
+# Deploy via CI/CD (GitHub Actions) — não rodar manualmente
+# Ver .github/workflows/deploy.yml
 ```
 
 ---
