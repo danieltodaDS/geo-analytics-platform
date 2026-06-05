@@ -2,11 +2,11 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
+from typing import Optional
+
 import pandas as pd
 import requests
 import structlog
-from typing import Optional
-
 from pydantic import BaseModel
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
