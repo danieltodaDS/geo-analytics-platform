@@ -99,10 +99,11 @@ class MunicipioRaw(BaseModel):
     macroregiao_sigla: str
     macroregiao_nome: str
     # Hierarquia antiga — microrregiao (divisão IBGE até 2017)
-    microrregiao_id: int
-    microrregiao_nome: str
-    mesorregiao_id: int
-    mesorregiao_nome: str
+    # Optional: municípios criados após 2017 podem não ter classificação nessa hierarquia
+    microrregiao_id: Optional[int] = None
+    microrregiao_nome: Optional[str] = None
+    mesorregiao_id: Optional[int] = None
+    mesorregiao_nome: Optional[str] = None
 ```
 
 Mapeamento JSON → campos do model:

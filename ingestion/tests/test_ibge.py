@@ -91,6 +91,14 @@ class TestMunicipioRaw:
         result = _parse(MUNICIPIO_COMPLETO)
         assert isinstance(result.id_municipio, int)
 
+    def test_parse_municipio_sem_microrregiao(self):
+        record = {**MUNICIPIO_COMPLETO, "microrregiao": None}
+        result = _parse(record)
+        assert result.microrregiao_id is None
+        assert result.microrregiao_nome is None
+        assert result.mesorregiao_id is None
+        assert result.mesorregiao_nome is None
+
 
 class TestVolumeGuardLocalidades:
     def test_volume_guard_warning(self, tmp_path):

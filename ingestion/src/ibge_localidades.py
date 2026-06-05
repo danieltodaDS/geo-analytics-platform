@@ -5,6 +5,8 @@ from pathlib import Path
 import pandas as pd
 import requests
 import structlog
+from typing import Optional
+
 from pydantic import BaseModel
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
@@ -27,10 +29,10 @@ class MunicipioRaw(BaseModel):
     macroregiao_id: int
     macroregiao_sigla: str
     macroregiao_nome: str
-    microrregiao_id: int
-    microrregiao_nome: str
-    mesorregiao_id: int
-    mesorregiao_nome: str
+    microrregiao_id: Optional[int] = None
+    microrregiao_nome: Optional[str] = None
+    mesorregiao_id: Optional[int] = None
+    mesorregiao_nome: Optional[str] = None
 
 
 def _retryable(exc: BaseException) -> bool:
