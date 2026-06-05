@@ -38,6 +38,9 @@ transform:
 test:
 	pytest ingestion/tests/
 	dbt test
+
+streamlit:
+	streamlit run app/dashboard.py
 ```
 
 ## Justificativa

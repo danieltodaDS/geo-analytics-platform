@@ -5,8 +5,8 @@ usando dados públicos brasileiros no GCP.
 ## Ciclo de desenvolvimento
 Toda feature de produção segue: Explorar → Entender → Especificar → Produtizar.
 A produtização segue três fases progressivas — nunca pule etapas:
-  4a. Local A — script salva Parquet em data/raw/ local, dbt roda contra arquivos locais (sem cloud)
-  4b. Local B — script salva Parquet local, dbt roda contra BigQuery
+  4a. Local A — Parquet em data/raw/ local; dbt roda via dbt-duckdb; Streamlit como protótipo local contra DuckDB
+  4b. Local B — Parquet local inalterado; dbt migrado para dbt-bigquery (ajustes de dialeto esperados); Streamlit contra BigQuery
   4c. Remoto  — Cloud Run + GCS + BigQuery em produção
 Antes de gerar código de produção, leia a spec correspondente em /specs.
 

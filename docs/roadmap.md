@@ -47,14 +47,17 @@ A v1 só está concluída quando o projeto estiver rodando de ponta a ponta nas 
 **Local — Fase A (sem dependência de cloud):**
 - Scripts de ingestão rodam via `make pipeline`
 - Parquet salvo no filesystem local (`data/raw/`)
-- dbt roda localmente contra os arquivos Parquet locais
+- dbt roda localmente via `dbt-duckdb` contra os Parquet locais
 - Testes dbt passam
+- Streamlit roda localmente contra DuckDB — **protótipo, não o produto final**
+- Projeto reproduzível por qualquer pessoa que clone o repositório, sem credenciais de cloud
 
 **Local — Fase B (warehouse real, execução local):**
 - Scripts de ingestão continuam rodando via `make pipeline`
 - Parquet salvo no filesystem local
-- dbt roda localmente contra o BigQuery
+- dbt migrado de `dbt-duckdb` para `dbt-bigquery` — ajustes de dialeto SQL esperados e planejados
 - Testes dbt passam contra o BigQuery
+- Streamlit aponta para BigQuery
 
 **Remoto (GCP):**
 - Ingestão via Cloud Run Jobs
@@ -76,8 +79,8 @@ Explorar      → notebook, entende o dado de verdade
 Entender      → documenta o que aprendeu
 Especificar   → escreve a spec (só após exploração)
 Produtizar
-  4a. Local A → script salva Parquet local, dbt roda contra arquivos locais
-  4b. Local B → script salva Parquet local, dbt roda contra BigQuery
+  4a. Local A → Parquet local; dbt-duckdb; Streamlit protótipo local
+  4b. Local B → Parquet local; dbt migrado para BigQuery (dialeto); Streamlit → BigQuery
   4c. Remoto  → Cloud Run + GCS + BigQuery em produção
 ```
 
@@ -285,21 +288,24 @@ Documentação
 4.  Feature 1 — Ingestão Olist           (4a: Parquet local)
 5.  Feature 2 — Ingestão IBGE            (4a: Parquet local)
 6.  Feature 3 — Ingestão BCB PIX         (4a: Parquet local)
-7.  Feature 4 — dbt Staging              (4a: dbt contra arquivos locais)
-8.  Feature 5 — dbt Intermediate         (4a: dbt contra arquivos locais)
-9.  Feature 6 — dbt Marts               (4a: dbt contra arquivos locais)
+7.  Feature 4 — dbt Staging              (4a: dbt-duckdb)
+8.  Feature 5 — dbt Intermediate         (4a: dbt-duckdb)
+9.  Feature 6 — dbt Marts               (4a: dbt-duckdb)
 10. Feature 7 — Qualidade com Elementary (4a)
+11. Feature 9 — Streamlit                (4a: protótipo local contra DuckDB)
 
 --- Local B — dbt contra BigQuery ---
-11. Features 1–7                         (4b: mesmos scripts, dbt → BigQuery)
+12. Features 4–6                         (4b: migração de dialeto dbt-duckdb → dbt-bigquery)
+13. Feature 7 — Elementary               (4b: contra BigQuery)
+14. Feature 9 — Streamlit                (4b: Streamlit → BigQuery)
 
 --- Preparação para remoto ---
-12. Terraform — provisiona infraestrutura GCP
-13. Feature 8 — CI/CD GitHub Actions
+15. Terraform — provisiona infraestrutura GCP
+16. Feature 8 — CI/CD GitHub Actions
 
 --- Remoto — GCP em produção ---
-14. Features 1–7                         (4c: Cloud Run + GCS + BigQuery)
-15. Feature 9 — Streamlit
+17. Features 1–7                         (4c: Cloud Run + GCS + BigQuery)
+18. Feature 9 — Streamlit                (4c: deploy final)
 
 Documentação final
 16. Documentar prompts Claude Code usados
