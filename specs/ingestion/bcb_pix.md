@@ -175,7 +175,7 @@ Arquivo: `ingestion/tests/test_bcb_pix.py`
 
 | Situação | Tratamento |
 |---|---|
-| `Municipio_Ibge` nulo (1 por mês) | Descartar antes do Pydantic — não é registro municipal |
+| `Municipio_Ibge` ou `Estado_Ibge` nulo | Descartar antes do Pydantic — o filtro verifica ambos os campos |
 | `Municipio_Ibge` e `Estado_Ibge` chegam como `float` | Cast para `int` via `field_validator` no Pydantic |
 | Município sem registro em algum mês | Dado ausente = sem atividade naquele mês — não é erro |
 | `HTTPError` 4xx | Falha imediata sem retry |
