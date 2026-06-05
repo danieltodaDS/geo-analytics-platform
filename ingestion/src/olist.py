@@ -21,6 +21,7 @@ _VOLUME_MINIMO = {
     "geolocation": 1_000_000,
     "products": 32_000,
     "sellers": 3_000,
+    "category_translation": 70,
 }
 
 
@@ -98,6 +99,11 @@ class OlistSellerRaw(BaseModel):
     seller_state: str
 
 
+class OlistCategoryTranslationRaw(BaseModel):
+    product_category_name: str
+    product_category_name_english: str
+
+
 _TABELAS = {
     "customers":      ("olist_customers_dataset.csv",       OlistCustomerRaw),
     "orders":         ("olist_orders_dataset.csv",          OlistOrderRaw),
@@ -106,11 +112,12 @@ _TABELAS = {
     "order_reviews":  ("olist_order_reviews_dataset.csv",   OlistOrderReviewRaw),
     "geolocation":    ("olist_geolocation_dataset.csv",     OlistGeolocationRaw),
     "products":       ("olist_products_dataset.csv",        OlistProductRaw),
-    "sellers":        ("olist_sellers_dataset.csv",         OlistSellerRaw),
+    "sellers":             ("olist_sellers_dataset.csv",                  OlistSellerRaw),
+    "category_translation": ("product_category_name_translation.csv",     OlistCategoryTranslationRaw),
 }
 
 
-def _validate_sample(df: pd.DataFrame, model: type[BaseModel], tabela: str) -> None:
+def _validate_sample(df: pd.DataFrame, model: type[BaseModel]) -> None:
     sample = df.head(_SAMPLE_SIZE).to_dict(orient="records")
     for record in sample:
         model(**{k: (None if pd.isna(v) else v) for k, v in record.items()})
@@ -137,7 +144,7 @@ def _process_table(
             minimo_esperado=_VOLUME_MINIMO[tabela],
         )
 
-    _validate_sample(df, model, tabela)
+    _validate_sample(df, model)
 
     dest = (
         Path(raw_base)

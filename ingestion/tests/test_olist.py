@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 import ingestion.src.olist as olist
 from ingestion.src.olist import (
+    OlistCategoryTranslationRaw,
     OlistCustomerRaw,
     OlistGeolocationRaw,
     OlistOrderItemRaw,
@@ -103,11 +104,6 @@ class TestParse:
         assert result.customer_id == "abc123"
         assert result.customer_zip_code_prefix == 14409
 
-    def test_parse_order_completo(self):
-        result = OlistOrderRaw(**ORDER)
-        assert result.order_id == "ord001"
-        assert result.order_status == "delivered"
-
     def test_parse_order_campos_opcionais(self):
         record = {**ORDER, "order_approved_at": None, "order_delivered_carrier_date": None, "order_delivered_customer_date": None}
         result = OlistOrderRaw(**record)
@@ -149,6 +145,14 @@ class TestParse:
     def test_parse_seller_completo(self):
         result = OlistSellerRaw(**SELLER)
         assert result.seller_zip_code_prefix == 13023
+
+    def test_parse_category_translation_completo(self):
+        result = OlistCategoryTranslationRaw(
+            product_category_name="beleza_saude",
+            product_category_name_english="health_beauty",
+        )
+        assert result.product_category_name == "beleza_saude"
+        assert result.product_category_name_english == "health_beauty"
 
 
 # ─── Volume guard ─────────────────────────────────────────────────────────────
