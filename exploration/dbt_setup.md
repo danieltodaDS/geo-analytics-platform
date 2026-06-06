@@ -60,6 +60,7 @@ geo_analytics:
 
 > `profiles.yml` não é commitado — está no `.gitignore`. Use `dbt/profiles.yml.example` como template.
 > O `path` é relativo ao diretório `dbt/` — onde os comandos dbt são executados.
+> **Fase 4b:** quando migrar para BigQuery, o `profiles.yml` passará a referenciar `dbt-bigquery` com `keyfile` ou `oauth`. Continuará fora do git — a mesma regra se aplica.
 
 ---
 

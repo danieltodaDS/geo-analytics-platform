@@ -20,27 +20,27 @@ Makefile com targets explícitos por etapa do pipeline:
 
 ```makefile
 pipeline:
-	python ingestion/src/olist.py
-	python ingestion/src/ibge_localidades.py
-	python ingestion/src/ibge_censo.py
-	python ingestion/src/bcb_pix.py
-	dbt run && dbt test
+	uv run python ingestion/src/olist.py
+	uv run python ingestion/src/ibge_localidades.py
+	uv run python ingestion/src/ibge_censo.py
+	uv run python ingestion/src/bcb_pix.py
+	cd dbt && uv run dbt run --profiles-dir . && uv run dbt test --profiles-dir .
 
 ingest:
-	python ingestion/src/olist.py
-	python ingestion/src/ibge_localidades.py
-	python ingestion/src/ibge_censo.py
-	python ingestion/src/bcb_pix.py
+	uv run python ingestion/src/olist.py
+	uv run python ingestion/src/ibge_localidades.py
+	uv run python ingestion/src/ibge_censo.py
+	uv run python ingestion/src/bcb_pix.py
 
 transform:
-	dbt run
+	cd dbt && uv run dbt run --profiles-dir .
 
 test:
-	pytest ingestion/tests/
-	dbt test
+	uv run pytest ingestion/tests/
+	cd dbt && uv run dbt test --profiles-dir .
 
 streamlit:
-	streamlit run app/dashboard.py
+	uv run streamlit run app/dashboard.py
 ```
 
 ## Justificativa
