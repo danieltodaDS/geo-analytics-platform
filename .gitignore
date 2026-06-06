@@ -12,6 +12,13 @@ wheels/
 # Environment
 .env
 
+# dbt
+dbt/profiles.yml
+dbt/geo_analytics.duckdb
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+
 # Folders
 /_archive
 /data

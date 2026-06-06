@@ -1,0 +1,7 @@
+geo_analytics:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "geo_analytics.duckdb"
+      threads: 4
