@@ -26,3 +26,19 @@
 - Próximo: Feature 4 — dbt Staging (explorar Parquets locais, escrever stg_*.sql contra DuckDB)
 
 ---
+
+**2026-06-05 (continuação)**
+- Sessão de dúvidas conceituais: explicados `dbt_project.yml` (name, profile, model-paths, materialização por camada) e demais arquivos de config dbt (`profiles.yml`, `.user.yml`)
+- Nenhum código alterado
+- Próximo: Feature 4 — dbt Staging (stg_*.sql contra DuckDB)
+
+---
+
+**2026-06-07**
+- BCB PIX ingestão executada: 378.663 registros, 68 nulos descartados, Parquet em `data/raw/bcb_pix/year=2026/month=06/day=07/`
+- Camada raw dbt criada: 13 views no schema `raw` (réplica fiel dos Parquets) — espelha `dataset_raw` do BigQuery
+- Arquitetura ELT local consolidada: Parquets → source → raw → staging → intermediate → marts
+- `generate_schema_name.sql` adicionado; `dbt_project.yml` atualizado com schema por camada
+- Próximo: Feature 4 — staging (stg_*.sql lendo de `{{ ref() }}` da camada raw)
+
+---
