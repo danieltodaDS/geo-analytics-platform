@@ -78,3 +78,12 @@
 - Próximo: especificar e implementar intermediate IBGE (int_ibge_censo_covariaveis + int_ibge_municipios)
 
 ---
+
+**2026-06-08 (continuação 4)**
+- `specs/ingestion/ibge.md` sincronizada com implementação: tabelas 9605/9606 → 10295/9936, endpoints, volume mínimo por tabela, testes renomeados
+- `specs/dbt/intermediate_ibge.md` criada: 2 modelos — `int_ibge_censo_covariaveis` (pivot SIDRA → 1 linha/município, 4 covariáveis) e `int_ibge_municipios` (geografia + censo)
+- Decisões: colunas dimensionais SIDRA descartadas (todas "Total"); hierarquias intermediárias IBGE descartadas de `int_ibge_municipios` (sem uso no pipeline); Fernando de Noronha sem cobertura Censo documentado
+- 14/14 testes intermediate IBGE passando
+- Próximo: intermediate BCB PIX ou marts
+
+---
