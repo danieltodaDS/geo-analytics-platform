@@ -177,7 +177,7 @@ Testes: `not_null` + `unique` no surrogate; `not_null` em `municipio_ibge` e `an
 
 ## Testes por modelo
 
-`unique` não é testado em staging (ADR-008). Apenas `not_null` nos identificadores mínimos.
+`unique` não é testado em staging para PKs naturais vindas da fonte (ADR-008). Exceção: surrogates construídos pelo pipeline testam `unique` porque expressam um grain que nós definimos — violação indica problema no modelo de dados, não no comportamento da fonte.
 
 | Modelo | Testes |
 |---|---|
@@ -190,10 +190,10 @@ Testes: `not_null` + `unique` no surrogate; `not_null` em `municipio_ibge` e `an
 | stg_olist_products | `not_null(product_id)` |
 | stg_olist_sellers | `not_null(seller_id)` |
 | stg_ibge_localidades | `not_null(id_municipio)` |
-| stg_ibge_censo_9606 | `not_null(surrogate_key)`, `not_null(codigo_municipio)` |
-| stg_ibge_censo_9605 | `not_null(surrogate_key)`, `not_null(codigo_municipio)` |
-| stg_ibge_censo_9514 | `not_null(surrogate_key)`, `not_null(codigo_municipio)` |
-| stg_bcb_pix | `not_null(pix_pk)`, `not_null(municipio_ibge)`, `not_null(ano_mes)` |
+| stg_ibge_censo_9606 | `not_null(surrogate_key)`, `unique(surrogate_key)`, `not_null(codigo_municipio)` |
+| stg_ibge_censo_9605 | `not_null(surrogate_key)`, `unique(surrogate_key)`, `not_null(codigo_municipio)` |
+| stg_ibge_censo_9514 | `not_null(surrogate_key)`, `unique(surrogate_key)`, `not_null(codigo_municipio)` |
+| stg_bcb_pix | `not_null(pix_pk)`, `unique(pix_pk)`, `not_null(municipio_ibge)`, `not_null(ano_mes)` |
 
 ---
 
