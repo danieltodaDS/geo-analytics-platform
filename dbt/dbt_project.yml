@@ -15,15 +15,24 @@ clean-targets:
 
 models:
   geo_analytics:
+    # view sobre Parquets/GCS; filtro de partição obrigatório nas queries downstream
+    # testes: nenhum — qualidade garantida pela validação Pydantic na ingestão
     raw:
       +materialized: view
       +schema: raw
+    # table full-refresh (big data: incremental com particionamento/clusterização)
+    # testes: not_null nos identificadores mínimos; unique não testado (ADR-008)
+    # dedup técnica (linhas idênticas) removida no modelo; dedup semântica no intermediate
     staging:
-      +materialized: view
+      +materialized: table
       +schema: staging
+    # table; joins, dedup semântica, regras de negócio
+    # testes: not_null + unique em toda PK, relationships em toda FK, accepted_values, expression_is_true
     intermediate:
       +materialized: table
       +schema: intermediate
+    # table; métricas prontas para consumo
+    # testes: suite completa + catálogo obrigatório (description em toda coluna exposta)
     marts:
       +materialized: table
       +schema: marts
