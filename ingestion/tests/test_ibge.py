@@ -150,14 +150,14 @@ class TestParseSidra:
         result = _parse_sidra([SIDRA_HEADER, SIDRA_RECORD])
         assert result[0].V == "21494"
 
-    def test_parse_sidra_tabela_9605_sem_d5_d6(self):
+    def test_parse_sidra_sem_d5_d6(self):
         result = _parse_sidra([SIDRA_HEADER, SIDRA_RECORD])
         assert result[0].D5C is None
         assert result[0].D5N is None
         assert result[0].D6C is None
         assert result[0].D6N is None
 
-    def test_parse_sidra_tabela_9606_com_d5_d6(self):
+    def test_parse_sidra_com_d5_d6(self):
         record = {**SIDRA_RECORD, "D5C": "6794", "D5N": "Total", "D6C": "0", "D6N": "Total"}
         result = _parse_sidra([SIDRA_HEADER, record])
         assert result[0].D5C == "6794"
@@ -178,6 +178,26 @@ class TestVolumeGuardCenso:
             for l in logs
         )
 
+    def test_volume_guard_9936_limiar_menor(self, tmp_path):
+        # 9936 tem volume_minimo=5000; 4999 deve disparar warning
+        data_baixo = [SIDRA_HEADER] + [SIDRA_RECORD] * 4999
+        # 9514 e 10295 têm volume_minimo=11000; 11001 não deve disparar
+        data_ok = [SIDRA_HEADER] + [SIDRA_RECORD] * 11001
+
+        def fetch_side_effect(tabela):
+            return data_baixo if tabela == "9936" else data_ok
+
+        with (
+            patch.object(ibge_censo, "_fetch", side_effect=fetch_side_effect),
+            patch.dict(os.environ, {"RAW_BASE_PATH": str(tmp_path)}),
+            structlog.testing.capture_logs() as logs,
+        ):
+            ibge_censo.run()
+
+        warnings = [l for l in logs if l["log_level"] == "warning" and "volume_baixo" in l["event"]]
+        assert len(warnings) == 1
+        assert warnings[0]["tabela"] == "9936"
+
 
 class TestRetry:
     def _mock_response(self, status_code: int) -> MagicMock:
@@ -193,12 +213,12 @@ class TestRetry:
             patch("time.sleep"),
         ):
             with pytest.raises(requests.HTTPError):
-                ibge_censo._fetch("9606")
+                ibge_censo._fetch("9514")
         assert mock_get.call_count == 3
 
     def test_sem_retry_4xx(self):
         mock_resp = self._mock_response(404)
         with patch("ingestion.src.ibge_censo.requests.get", return_value=mock_resp) as mock_get:
             with pytest.raises(requests.HTTPError):
-                ibge_censo._fetch("9606")
+                ibge_censo._fetch("9514")
         assert mock_get.call_count == 1

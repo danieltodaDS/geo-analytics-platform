@@ -40,13 +40,13 @@ sources:
         meta:
           external_location: "read_parquet('../data/raw/ibge_localidades/**/*.parquet')"
 
-      - name: ibge_censo_9606
+      - name: ibge_censo_9936
         meta:
-          external_location: "read_parquet('../data/raw/ibge_censo_9606/**/*.parquet')"
+          external_location: "read_parquet('../data/raw/ibge_censo_9936/**/*.parquet')"
 
-      - name: ibge_censo_9605
+      - name: ibge_censo_10295
         meta:
-          external_location: "read_parquet('../data/raw/ibge_censo_9605/**/*.parquet')"
+          external_location: "read_parquet('../data/raw/ibge_censo_10295/**/*.parquet')"
 
       - name: ibge_censo_9514
         meta:

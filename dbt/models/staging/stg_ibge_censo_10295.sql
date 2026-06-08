@@ -1,5 +1,5 @@
 with source as (
-    select * from {{ ref('ibge_censo_9605') }}
+    select * from {{ ref('ibge_censo_10295') }}
 )
 
 select
@@ -10,14 +10,22 @@ select
         coalesce(D3C, '') || '|' ||
         coalesce(D4C, '') || '|' ||
         coalesce(D4N, '') || '|' ||
+        coalesce(D5C, '') || '|' ||
+        coalesce(D5N, '') || '|' ||
+        coalesce(D6C, '') || '|' ||
+        coalesce(D6N, '') || '|' ||
         coalesce(V,   '')
     )                            as row_hash,
     try_cast(D1C as bigint)      as codigo_municipio,
     D2C                          as codigo_variavel,
     D2N                          as variavel,
     try_cast(D3C as bigint)      as ano,
-    D4C                          as codigo_cor_raca,
-    D4N                          as cor_raca,
+    D4C                          as codigo_sexo,
+    D4N                          as sexo,
+    D5C                          as codigo_grupo_idade,
+    D5N                          as grupo_idade,
+    D6C                          as codigo_cor_raca,
+    D6N                          as cor_raca,
     try_cast(V as double)        as valor
 from source
 qualify row_number() over (partition by row_hash) = 1

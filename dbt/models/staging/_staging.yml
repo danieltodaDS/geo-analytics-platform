@@ -93,20 +93,26 @@ models:
       - name: id_municipio
         data_tests: [not_null]
 
-  - name: stg_ibge_censo_9606
-    description: SIDRA 9606 — colunas renomeadas. Grain (municipio, variavel, sexo, cor_raca, idade). row_hash de todas as colunas.
+  - name: stg_ibge_censo_9936
+    description: SIDRA 9936 — % domicílios com conexão à internet. Grain (municipio). Filtrado na ingestão para internet=Sim + variável percentual.
     meta:
-      natural_pk: [codigo_municipio, codigo_variavel, codigo_sexo, codigo_cor_raca, codigo_idade]
+      natural_pk: [codigo_municipio]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
       - name: codigo_municipio
         data_tests: [not_null]
+      - name: pct_domicilios_com_internet
+        data_tests: [not_null]
 
-  - name: stg_ibge_censo_9605
-    description: SIDRA 9605 — colunas renomeadas. Grain (municipio, variavel, cor_raca).
+  - name: stg_ibge_censo_10295
+    description: >
+      SIDRA 10295 — rendimento nominal médio e mediano mensal domiciliar per capita.
+      Grain (municipio, variavel). Dimensões sexo/grupo_idade/cor_raca sempre = Total por construção da URL de ingestão.
+      Variáveis com significado semântico: codigo_variavel='13431' (rendimento médio, R$) e '13534' (rendimento mediano, R$).
+      Variáveis '13604' (contagem de moradores) e '1013604' (% do total) são auxiliares — não usar como covariável.
     meta:
-      natural_pk: [codigo_municipio, codigo_variavel, codigo_cor_raca]
+      natural_pk: [codigo_municipio, codigo_variavel]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]

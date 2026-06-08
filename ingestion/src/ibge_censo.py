@@ -12,10 +12,16 @@ from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponen
 
 log = structlog.get_logger()
 
-_TABELAS = ["9606", "9605", "9514"]
 _TIMEOUT = 60
 _SLEEP_ENTRE_CHAMADAS = 0.5
-_VOLUME_MINIMO = 11000
+
+# c2072/77585 = existência de internet = Sim; c63/95826 = condição de ocupação = Total
+_TABELAS_CONFIG: dict[str, dict] = {
+    "9514":  {"url": "https://apisidra.ibge.gov.br/values/t/9514/n6/all/v/all/p/last",  "volume_minimo": 11000},
+    "10295": {"url": "https://apisidra.ibge.gov.br/values/t/10295/n6/all/v/all/p/last", "volume_minimo": 11000},
+    "9936":  {"url": "https://apisidra.ibge.gov.br/values/t/9936/n6/all/v/1000381/p/last/c2072/77585/c63/95826", "volume_minimo": 5000},
+}
+_TABELAS = list(_TABELAS_CONFIG)
 
 
 class SidraRegistroRaw(BaseModel):
@@ -51,7 +57,7 @@ def _retryable(exc: BaseException) -> bool:
     reraise=True,
 )
 def _fetch(tabela: str) -> list[dict]:
-    url = f"https://apisidra.ibge.gov.br/values/t/{tabela}/n6/all/v/all/p/last"
+    url = _TABELAS_CONFIG[tabela]["url"]
     r = requests.get(url, timeout=_TIMEOUT)
     r.raise_for_status()
     return r.json()
@@ -111,8 +117,9 @@ def run() -> None:
             data = _fetch(tabela)
             records = _parse_sidra(data)
             log.info("ibge_censo.fetch_ok", tabela=tabela, total_registros=len(records))
-            if len(records) < _VOLUME_MINIMO:
-                log.warning("ibge_censo.volume_baixo", tabela=tabela, total=len(records), minimo_esperado=_VOLUME_MINIMO)
+            minimo = _TABELAS_CONFIG[tabela]["volume_minimo"]
+            if len(records) < minimo:
+                log.warning("ibge_censo.volume_baixo", tabela=tabela, total=len(records), minimo_esperado=minimo)
             _gravar(records, tabela, today)
         except Exception:
             log.error("ibge_censo.erro_fatal", tabela=tabela, exc_info=True)
