@@ -18,7 +18,7 @@
 |---|---|
 | Fonte → Raw | Schema válido (Pydantic) |
 | Raw → Staging | Carga bem-sucedida no GCS e no BigQuery |
-| Staging → Intermediate | Testes de PK passando (`not_null` + `unique`) |
+| Staging → Intermediate | `not_null` nos identificadores-chave passando; dado chegou íntegro |
 | Intermediate → Marts | Testes de relacionamento e negócio passando |
 | Marts → Consumo | Suite completa + documentação de catálogo presente |
 
@@ -28,12 +28,14 @@
 
 ### Staging
 
+Staging espelha a fonte — o contrato é que o dado chegou, não que é único.
+
 | Contexto | Teste dbt | Obrigatório |
 |---|---|---|
-| Toda coluna PK | `not_null` | ✅ |
-| Toda coluna PK | `unique` | ✅ |
+| Identificadores mínimos (PK candidata) | `not_null` | ✅ |
+| Unicidade | não testada em staging | ❌ |
 
-Staging não tem regras de negócio — os únicos testes são de integridade estrutural da chave.
+`not_null` confirma que o dado chegou identificável. `unique` não é testado: duplicatas técnicas são removidas no próprio modelo staging (ver política abaixo); duplicatas semânticas são resolvidas no intermediate. Ver ADR-008.
 
 ### Intermediate
 
@@ -53,6 +55,28 @@ Staging não tem regras de negócio — os únicos testes são de integridade es
 | Campos de status / categoria | `accepted_values` | ✅ |
 | Métricas numéricas | `expression_is_true (valor > 0)` | ✅ |
 | Volume mínimo | `dbt_utils.expression_is_true` ou Elementary | ✅ |
+
+---
+
+## Política de Deduplicação
+
+### Duplicata técnica
+Definição: linha byte-a-byte idêntica, originada por retry ou reprocessamento de pipeline — não representa uma entidade diferente.
+Onde remover: **staging** — é ruído de infraestrutura, não lógica de negócio.
+Como implementar:
+```sql
+QUALIFY ROW_NUMBER() OVER (PARTITION BY <todas as colunas não-técnicas>) = 1
+```
+
+### Duplicata semântica
+Definição: mesma entidade de negócio com versões diferentes do registro (ex: mesmo cliente com endereço atualizado, mesmo pedido com status diferente).
+Onde remover: **intermediate** — e somente intermediate.
+Como implementar:
+```sql
+QUALIFY ROW_NUMBER() OVER (PARTITION BY <chave de negócio> ORDER BY <updated_at> DESC) = 1
+```
+
+Regra: staging nunca remove duplicata semântica. A decisão de qual versão vence é uma regra de negócio e pertence ao intermediate.
 
 ---
 
