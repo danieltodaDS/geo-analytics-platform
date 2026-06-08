@@ -43,6 +43,9 @@ Todas as regras abaixo são **técnicas** — nenhuma implica decisão de negóc
 - Colunas de partição `year`, `month`, `day` são descartadas em todos os modelos.
 - Todo modelo adiciona `row_hash`: `md5` de todas as colunas de negócio com `coalesce(..., '')`. Serve como fingerprint de linha (dedup técnica) e mecanismo de idempotência em cargas incrementais.
 - Dedup técnica via `QUALIFY ROW_NUMBER() OVER (PARTITION BY row_hash) = 1` aplicada antes de qualquer transformação.
+- A PK natural de cada modelo está declarada em `meta.natural_pk` no `_staging.yml`. O intermediate usa essa informação para saber quais colunas testar com `not_null + unique` após dedup semântica.
+
+**Limitação conhecida do row_hash:** `coalesce(col, '')` torna `NULL` e `''` (string vazia) indistinguíveis no hash. Duas linhas onde uma coluna é `NULL` e outra é `''` produzem o mesmo `row_hash` e a segunda será descartada pelo `QUALIFY`. Nas fontes deste projeto isso não ocorre — strings vazias não são publicadas pelo IBGE, BCB ou Olist. Monitorar se novas fontes introduzirem esse padrão.
 
 ---
 
