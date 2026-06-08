@@ -2,63 +2,81 @@ version: 2
 
 models:
   - name: stg_olist_customers
-    description: Clientes Olist. Schema raw sem partição. Dedup técnica via QUALIFY.
+    description: Clientes Olist. Dedup técnica via row_hash.
     columns:
+      - name: row_hash
+        data_tests: [not_null, unique]
       - name: customer_id
         data_tests: [not_null]
 
   - name: stg_olist_orders
-    description: Pedidos Olist. Datas castadas de VARCHAR para TIMESTAMP. Dedup técnica via QUALIFY.
+    description: Pedidos Olist. Datas castadas de VARCHAR para TIMESTAMP. Dedup técnica via row_hash.
     columns:
+      - name: row_hash
+        data_tests: [not_null, unique]
       - name: order_id
         data_tests: [not_null]
 
   - name: stg_olist_order_items
-    description: Itens de pedido Olist. Surrogate PK (order_id + order_item_id). Dedup técnica via QUALIFY.
+    description: Itens de pedido Olist. Surrogate PK (order_id + order_item_id). Dedup técnica via row_hash.
     columns:
+      - name: row_hash
+        data_tests: [not_null, unique]
       - name: order_item_pk
         data_tests: [not_null, unique]
 
   - name: stg_olist_order_payments
-    description: Pagamentos Olist. Surrogate PK (order_id + payment_sequential). Dedup técnica via QUALIFY.
+    description: Pagamentos Olist. Surrogate PK (order_id + payment_sequential). Dedup técnica via row_hash.
     columns:
+      - name: row_hash
+        data_tests: [not_null, unique]
       - name: payment_pk
         data_tests: [not_null, unique]
 
   - name: stg_olist_order_reviews
-    description: Avaliações Olist. Datas castadas de VARCHAR para TIMESTAMP. review_id não é único no raw (mesmo review aplicado a múltiplos pedidos). Dedup técnica via QUALIFY.
+    description: Avaliações Olist. review_id não é único no raw (mesmo review aplicado a múltiplos pedidos). Dedup técnica via row_hash.
     columns:
+      - name: row_hash
+        data_tests: [not_null, unique]
       - name: review_pk
         data_tests: [not_null, unique]
       - name: review_id
         data_tests: [not_null]
 
   - name: stg_olist_geolocation
-    description: Geolocalização por CEP. Múltiplas linhas por zip preservadas (dedup semântica no intermediate). Dedup técnica via QUALIFY.
+    description: Geolocalização por CEP. Múltiplas linhas por zip preservadas (dedup semântica no intermediate). Dedup técnica via row_hash.
     columns:
+      - name: row_hash
+        data_tests: [not_null, unique]
       - name: geolocation_zip_code_prefix
         data_tests: [not_null]
 
   - name: stg_olist_products
-    description: Produtos Olist. Typos corrigidos (lenght→length). Dedup técnica via QUALIFY.
+    description: Produtos Olist. Typos corrigidos (lenght→length). Dedup técnica via row_hash.
     columns:
+      - name: row_hash
+        data_tests: [not_null, unique]
       - name: product_id
         data_tests: [not_null]
 
   - name: stg_olist_sellers
-    description: Vendedores Olist. Schema raw sem partição. Dedup técnica via QUALIFY.
+    description: Vendedores Olist. Dedup técnica via row_hash.
     columns:
+      - name: row_hash
+        data_tests: [not_null, unique]
       - name: seller_id
         data_tests: [not_null]
 
   - name: stg_ibge_localidades
-    description: Municípios IBGE. microrregiao_id e mesorregiao_id castados de DOUBLE para INTEGER. Dedup técnica via QUALIFY.
+    description: Municípios IBGE. microrregiao_id e mesorregiao_id castados de DOUBLE para INTEGER. Dedup técnica via row_hash.
     columns:
+      - name: row_hash
+        data_tests: [not_null, unique]
       - name: id_municipio
         data_tests: [not_null]
 
   - name: stg_ibge_censo_9606
-    description: SIDRA 9606 — colunas renomeadas (D1C→codigo_municipio, V→valor, etc.). Grain (municipio, variavel, sexo, cor_raca, idade). row_hash de todas as colunas — serve como fingerprint de linha e identificador de grain.
+    description: SIDRA 9606 — colunas renomeadas. Grain (municipio, variavel, sexo, cor_raca, idade). row_hash de todas as colunas.
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -66,7 +84,7 @@ models:
         data_tests: [not_null]
 
   - name: stg_ibge_censo_9605
-    description: SIDRA 9605 — colunas renomeadas. Grain (municipio, variavel, cor_raca). D5/D6 ausentes (tabela tem 4 dimensões).
+    description: SIDRA 9605 — colunas renomeadas. Grain (municipio, variavel, cor_raca).
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
