@@ -39,6 +39,7 @@
 - Camada raw dbt criada: 13 views no schema `raw` (réplica fiel dos Parquets) — espelha `dataset_raw` do BigQuery
 - Arquitetura ELT local consolidada: Parquets → source → raw → staging → intermediate → marts
 - `generate_schema_name.sql` adicionado; `dbt_project.yml` atualizado com schema por camada
+- `specs/dbt/raw.md` criada (spec retroativa à camada raw)
 - Próximo: Feature 4 — staging (stg_*.sql lendo de `{{ ref() }}` da camada raw)
 
 ---
