@@ -20,7 +20,7 @@ Staging aplica apenas `not_null` nos identificadores mínimos que confirmam que 
 
 A responsabilidade de deduplicação é dividida em dois níveis:
 
-**Duplicata técnica** (linha byte-a-byte idêntica, causada por retry ou reprocessamento de pipeline): removida em staging via `QUALIFY ROW_NUMBER() OVER (PARTITION BY <todas as colunas não-técnicas>) = 1`. É ruído de infraestrutura, não decisão de negócio.
+**Duplicata técnica** (linha byte-a-byte idêntica, causada por retry ou reprocessamento de pipeline): removida em staging via `QUALIFY ROW_NUMBER() OVER (PARTITION BY <todas as colunas não-técnicas>) = 1`. Obrigatório. É ruído de infraestrutura, não decisão de negócio.
 
 **Duplicata semântica** (mesma entidade, versões diferentes do registro): removida exclusivamente no intermediate, onde há contexto de negócio para decidir qual versão vence.
 
