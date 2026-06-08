@@ -52,3 +52,11 @@
 - 41/41 testes dbt staging passando; Próximo: Feature 5 — dbt intermediate
 
 ---
+
+**2026-06-08 (continuação)**
+- `specs/dbt/intermediate.md` completa: 7 modelos novos especificados (int_olist_order_items_agg, int_olist_order_reviews_agg, int_dim_customers, int_dim_sellers, int_dim_products, int_fact_orders) + 2 já existentes
+- Decisões: sem filtro de status no intermediate (responsabilidade do mart); geografia do fact usa CEP do pedido (stg_customers), não CEP modal da dim; int_dim_customers/sellers/products consumidas no mart, não no fact
+- Spec revisada pelo Validador: 7 ressalvas resolvidas — diagrama de dependências, cobertura de geolocalização, testes de sanidade (approval_days >= 0), débitos técnicos documentados
+- Próximo: implementar modelos intermediate em dbt (começar pelas pré-agregações, depois dims, depois fact)
+
+---
