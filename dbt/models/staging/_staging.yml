@@ -1,0 +1,92 @@
+version: 2
+
+models:
+  - name: stg_olist_customers
+    description: Clientes Olist. Schema raw sem partição.
+    columns:
+      - name: customer_id
+        data_tests: [not_null, unique]
+
+  - name: stg_olist_orders
+    description: Pedidos Olist. Datas castadas de VARCHAR para TIMESTAMP.
+    columns:
+      - name: order_id
+        data_tests: [not_null, unique]
+
+  - name: stg_olist_order_items
+    description: Itens de pedido Olist. Surrogate PK (order_id + order_item_id).
+    columns:
+      - name: order_item_pk
+        data_tests: [not_null, unique]
+
+  - name: stg_olist_order_payments
+    description: Pagamentos Olist. Surrogate PK (order_id + payment_sequential).
+    columns:
+      - name: payment_pk
+        data_tests: [not_null, unique]
+
+  - name: stg_olist_order_reviews
+    description: Avaliações Olist. Datas castadas de VARCHAR para TIMESTAMP. review_id não é único no raw (mesmo review aplicado a múltiplos pedidos).
+    columns:
+      - name: review_pk
+        data_tests: [not_null, unique]
+      - name: review_id
+        data_tests: [not_null]
+
+  - name: stg_olist_geolocation
+    description: Geolocalização por CEP. Múltiplas linhas por zip preservadas (dedup no intermediate).
+    columns:
+      - name: geolocation_zip_code_prefix
+        data_tests: [not_null]
+
+  - name: stg_olist_products
+    description: Produtos Olist. Typos corrigidos (lenght→length).
+    columns:
+      - name: product_id
+        data_tests: [not_null, unique]
+
+  - name: stg_olist_sellers
+    description: Vendedores Olist. Schema raw sem partição.
+    columns:
+      - name: seller_id
+        data_tests: [not_null, unique]
+
+  - name: stg_ibge_localidades
+    description: Municípios IBGE. microrregiao_id e mesorregiao_id castados de DOUBLE para INTEGER.
+    columns:
+      - name: id_municipio
+        data_tests: [not_null, unique]
+
+  - name: stg_ibge_censo_9606
+    description: SIDRA 9606 — colunas renomeadas (D1C→codigo_municipio, V→valor, etc.). Grain (municipio, variavel, sexo, cor_raca, idade).
+    columns:
+      - name: surrogate_key
+        data_tests: [not_null, unique]
+      - name: codigo_municipio
+        data_tests: [not_null]
+
+  - name: stg_ibge_censo_9605
+    description: SIDRA 9605 — colunas renomeadas. Grain (municipio, variavel, cor_raca). D5/D6 ausentes (tabela tem 4 dimensões).
+    columns:
+      - name: surrogate_key
+        data_tests: [not_null, unique]
+      - name: codigo_municipio
+        data_tests: [not_null]
+
+  - name: stg_ibge_censo_9514
+    description: SIDRA 9514 — colunas renomeadas. Grain (municipio, variavel, sexo, declaracao_idade, idade).
+    columns:
+      - name: surrogate_key
+        data_tests: [not_null, unique]
+      - name: codigo_municipio
+        data_tests: [not_null]
+
+  - name: stg_bcb_pix
+    description: PIX por município — PascalCase renomeado para snake_case. Grain (municipio_ibge, ano_mes).
+    columns:
+      - name: pix_pk
+        data_tests: [not_null, unique]
+      - name: municipio_ibge
+        data_tests: [not_null]
+      - name: ano_mes
+        data_tests: [not_null]
