@@ -43,3 +43,12 @@
 - Próximo: Feature 5 — dbt intermediate
 
 ---
+
+**2026-06-08**
+- Sessão conceitual + refinamento de política: raw=view (filtro partição obrigatório), staging=table full-refresh, intermediate=table (joins+dedup semântica), marts=table; ADR-008 criado
+- Política de qualidade staging reformulada: `row_hash` (md5 all cols + coalesce) universal em todos os 13 modelos — serve como fingerprint de dedup técnica (QUALIFY) e mecanismo de idempotência para cargas incrementais
+- `meta.natural_pk` adicionado no `_staging.yml` de todos os modelos — comunica ao intermediate quais colunas testar com `not_null + unique` após dedup semântica
+- `CLAUDE.md` atualizado com docs normativos (`roadmap.md`, `conventions.md`, `data_quality.md`) e testes obrigatórios por camada; `docs/geo_lift_scope.md` duplicado removido
+- 41/41 testes dbt staging passando; Próximo: Feature 5 — dbt intermediate
+
+---
