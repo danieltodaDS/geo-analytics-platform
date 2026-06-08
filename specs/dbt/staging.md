@@ -112,11 +112,9 @@ Descartados: `NC`, `NN`, `MC`, `MN`, `D1N` (nome com UF sufixado, redundante com
 
 Grain: `(codigo_municipio, codigo_variavel, codigo_sexo, codigo_cor_raca, codigo_idade)`
 
-Surrogate: `md5(D1C || '|' || D2C || '|' || D4C || '|' || D5C || '|' || D6C)`
+`row_hash`: `md5` de todas as colunas fonte (D1C a V) com `coalesce(..., '')` para NULLs. Serve como fingerprint da linha (dedup técnica via `QUALIFY`) e como identificador de grain (testado com `unique`).
 
-**Comportamento de NULL no surrogate:** o operador `||` propaga NULL — se qualquer componente for NULL, o surrogate inteiro vira NULL. O teste `not_null` no surrogate é o guardião: falha imediatamente se o dado vier com chave de dimensão nula. O IBGE não publica chaves nulas, então o risco é baixo; o teste existe para capturar defeitos de ingestão.
-
-Testes: `not_null` + `unique` no surrogate; `not_null` em `codigo_municipio`.
+Testes: `not_null` + `unique` em `row_hash`; `not_null` em `codigo_municipio`.
 
 ### stg_ibge_censo_9605
 Fonte: Rendimento médio domiciliar per capita — breakdown Cor/Raça.
@@ -127,7 +125,7 @@ Mesmo mapeamento que 9606, exceto:
 
 Grain: `(codigo_municipio, codigo_variavel, codigo_cor_raca)`
 
-Surrogate: `md5(D1C || '|' || D2C || '|' || D4C)` — mesmo comportamento de NULL descrito acima.
+`row_hash`: `md5` de D1C, D2C, D2N, D3C, D4C, D4N, V.
 
 ### stg_ibge_censo_9514
 Fonte: População por Sexo × Forma de Declaração × Idade.
@@ -140,7 +138,7 @@ Fonte: População por Sexo × Forma de Declaração × Idade.
 
 Grain: `(codigo_municipio, codigo_variavel, codigo_sexo, codigo_declaracao_idade, codigo_idade)`
 
-Surrogate: `md5(D1C || '|' || D2C || '|' || D4C || '|' || D5C || '|' || D6C)` — mesmo comportamento de NULL descrito acima.
+`row_hash`: `md5` de todas as colunas fonte (D1C a V).
 
 ### stg_bcb_pix
 Renomeação de PascalCase → snake_case:
@@ -169,31 +167,31 @@ Renomeação de PascalCase → snake_case:
 
 Grain: `(municipio_ibge, ano_mes)` — um registro por município por mês.
 
-Surrogate: `municipio_ibge::VARCHAR || '-' || ano_mes::VARCHAR`
+`row_hash`: `md5` de todas as 19 colunas fonte com `coalesce(..., '')`.
 
-Testes: `not_null` + `unique` no surrogate; `not_null` em `municipio_ibge` e `ano_mes`.
+Testes: `not_null` + `unique` em `row_hash`; `not_null` em `municipio_ibge` e `ano_mes`.
 
 ---
 
 ## Testes por modelo
 
-`unique` não é testado em staging para PKs naturais vindas da fonte (ADR-008). Exceção: surrogates construídos pelo pipeline testam `unique` porque expressam um grain que nós definimos — violação indica problema no modelo de dados, não no comportamento da fonte.
+`unique` não é testado em PKs naturais da fonte (ADR-008). PKs construídas pelo pipeline (concatenadas ou `row_hash`) testam `unique` — violação indica problema no modelo de dados. Todos os modelos aplicam dedup técnica via `QUALIFY ROW_NUMBER() OVER (PARTITION BY ...) = 1`.
 
 | Modelo | Testes |
 |---|---|
 | stg_olist_customers | `not_null(customer_id)` |
 | stg_olist_orders | `not_null(order_id)` |
-| stg_olist_order_items | `not_null(order_item_pk)` |
-| stg_olist_order_payments | `not_null(payment_pk)` |
-| stg_olist_order_reviews | `not_null(review_id)` |
+| stg_olist_order_items | `not_null(order_item_pk)`, `unique(order_item_pk)` |
+| stg_olist_order_payments | `not_null(payment_pk)`, `unique(payment_pk)` |
+| stg_olist_order_reviews | `not_null(review_pk)`, `unique(review_pk)`, `not_null(review_id)` |
 | stg_olist_geolocation | `not_null(geolocation_zip_code_prefix)` |
 | stg_olist_products | `not_null(product_id)` |
 | stg_olist_sellers | `not_null(seller_id)` |
 | stg_ibge_localidades | `not_null(id_municipio)` |
-| stg_ibge_censo_9606 | `not_null(surrogate_key)`, `unique(surrogate_key)`, `not_null(codigo_municipio)` |
-| stg_ibge_censo_9605 | `not_null(surrogate_key)`, `unique(surrogate_key)`, `not_null(codigo_municipio)` |
-| stg_ibge_censo_9514 | `not_null(surrogate_key)`, `unique(surrogate_key)`, `not_null(codigo_municipio)` |
-| stg_bcb_pix | `not_null(pix_pk)`, `unique(pix_pk)`, `not_null(municipio_ibge)`, `not_null(ano_mes)` |
+| stg_ibge_censo_9606 | `not_null(row_hash)`, `unique(row_hash)`, `not_null(codigo_municipio)` |
+| stg_ibge_censo_9605 | `not_null(row_hash)`, `unique(row_hash)`, `not_null(codigo_municipio)` |
+| stg_ibge_censo_9514 | `not_null(row_hash)`, `unique(row_hash)`, `not_null(codigo_municipio)` |
+| stg_bcb_pix | `not_null(row_hash)`, `unique(row_hash)`, `not_null(municipio_ibge)`, `not_null(ano_mes)` |
 
 ---
 
