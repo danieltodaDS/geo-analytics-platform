@@ -28,14 +28,15 @@
 
 ### Staging
 
-Staging espelha a fonte — o contrato é que o dado chegou, não que é único.
+Staging espelha a fonte com dedup técnica e mecanismo de idempotência para cargas incrementais.
 
 | Contexto | Teste dbt | Obrigatório |
 |---|---|---|
-| Identificadores mínimos (PK candidata) | `not_null` | ✅ |
-| Unicidade | não testada em staging | ❌ |
+| `row_hash` (md5 all cols) | `not_null` + `unique` | ✅ |
+| PK natural da fonte | `not_null` | ✅ |
+| Unicidade da PK natural | não testada em staging | ❌ |
 
-`not_null` confirma que o dado chegou identificável. `unique` não é testado: duplicatas técnicas são removidas no próprio modelo staging (ver política abaixo); duplicatas semânticas são resolvidas no intermediate. Ver ADR-008.
+`row_hash` é adicionado a todos os modelos de staging. Serve como fingerprint da linha (dedup técnica via `QUALIFY`) e como mecanismo de idempotência em cargas incrementais — nova partição é inserida somente se `row_hash` ainda não existe. Unicidade da PK natural é garantida no intermediate, após dedup semântica. Ver ADR-008.
 
 ### Intermediate
 

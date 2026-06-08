@@ -11,12 +11,12 @@
 ```
 O que chega:    Dado do dataset_raw (Phase 4a: Parquets locais)
 O que muda:     Cast de tipos, renomeação para snake_case, remoção de colunas de partição,
-                remoção de duplicatas técnicas (linhas byte-a-byte idênticas)
+                adição de row_hash (md5 all cols), remoção de duplicatas técnicas via QUALIFY
 O que NÃO muda: Granularidade — 1 linha raw = 1 linha staging (após dedup técnica)
 Regras:         NENHUMA regra de negócio — só limpeza técnica
                 Sem filtros, sem joins, sem agregações, sem dedup semântica
-Critério:       not_null nos identificadores-chave passando (ADR-008)
-                unique não é testado em staging — garantido no intermediate
+Critério:       not_null + unique em row_hash passando (ADR-008)
+                PK natural da fonte: not_null apenas — unique garantido no intermediate
 ```
 
 ---
@@ -39,8 +39,10 @@ Phase 4b: substituir por sources BigQuery (`dataset_raw`). Ajustes de dialeto es
 
 Todas as regras abaixo são **técnicas** — nenhuma implica decisão de negócio.
 
-### Regra universal
-Colunas de partição `year`, `month`, `day` são descartadas em todos os modelos.
+### Regras universais
+- Colunas de partição `year`, `month`, `day` são descartadas em todos os modelos.
+- Todo modelo adiciona `row_hash`: `md5` de todas as colunas de negócio com `coalesce(..., '')`. Serve como fingerprint de linha (dedup técnica) e mecanismo de idempotência em cargas incrementais.
+- Dedup técnica via `QUALIFY ROW_NUMBER() OVER (PARTITION BY row_hash) = 1` aplicada antes de qualquer transformação.
 
 ---
 
@@ -175,23 +177,23 @@ Testes: `not_null` + `unique` em `row_hash`; `not_null` em `municipio_ibge` e `a
 
 ## Testes por modelo
 
-`unique` não é testado em PKs naturais da fonte (ADR-008). PKs construídas pelo pipeline (concatenadas ou `row_hash`) testam `unique` — violação indica problema no modelo de dados. Todos os modelos aplicam dedup técnica via `QUALIFY ROW_NUMBER() OVER (PARTITION BY ...) = 1`.
+Todo modelo testa `not_null + unique` em `row_hash`. PKs naturais da fonte testam apenas `not_null` — `unique` é garantido no intermediate após dedup semântica (ADR-008).
 
-| Modelo | Testes |
-|---|---|
-| stg_olist_customers | `not_null(customer_id)` |
-| stg_olist_orders | `not_null(order_id)` |
-| stg_olist_order_items | `not_null(order_item_pk)`, `unique(order_item_pk)` |
-| stg_olist_order_payments | `not_null(payment_pk)`, `unique(payment_pk)` |
-| stg_olist_order_reviews | `not_null(review_pk)`, `unique(review_pk)`, `not_null(review_id)` |
-| stg_olist_geolocation | `not_null(geolocation_zip_code_prefix)` |
-| stg_olist_products | `not_null(product_id)` |
-| stg_olist_sellers | `not_null(seller_id)` |
-| stg_ibge_localidades | `not_null(id_municipio)` |
-| stg_ibge_censo_9606 | `not_null(row_hash)`, `unique(row_hash)`, `not_null(codigo_municipio)` |
-| stg_ibge_censo_9605 | `not_null(row_hash)`, `unique(row_hash)`, `not_null(codigo_municipio)` |
-| stg_ibge_censo_9514 | `not_null(row_hash)`, `unique(row_hash)`, `not_null(codigo_municipio)` |
-| stg_bcb_pix | `not_null(row_hash)`, `unique(row_hash)`, `not_null(municipio_ibge)`, `not_null(ano_mes)` |
+| Modelo | row_hash | PK / identificador mínimo |
+|---|---|---|
+| stg_olist_customers | `not_null`, `unique` | `not_null(customer_id)` |
+| stg_olist_orders | `not_null`, `unique` | `not_null(order_id)` |
+| stg_olist_order_items | `not_null`, `unique` | `not_null(order_item_pk)`, `unique(order_item_pk)` |
+| stg_olist_order_payments | `not_null`, `unique` | `not_null(payment_pk)`, `unique(payment_pk)` |
+| stg_olist_order_reviews | `not_null`, `unique` | `not_null(review_pk)`, `unique(review_pk)`, `not_null(review_id)` |
+| stg_olist_geolocation | `not_null`, `unique` | `not_null(geolocation_zip_code_prefix)` |
+| stg_olist_products | `not_null`, `unique` | `not_null(product_id)` |
+| stg_olist_sellers | `not_null`, `unique` | `not_null(seller_id)` |
+| stg_ibge_localidades | `not_null`, `unique` | `not_null(id_municipio)` |
+| stg_ibge_censo_9606 | `not_null`, `unique` | `not_null(codigo_municipio)` |
+| stg_ibge_censo_9605 | `not_null`, `unique` | `not_null(codigo_municipio)` |
+| stg_ibge_censo_9514 | `not_null`, `unique` | `not_null(codigo_municipio)` |
+| stg_bcb_pix | `not_null`, `unique` | `not_null(municipio_ibge)`, `not_null(ano_mes)` |
 
 ---
 
