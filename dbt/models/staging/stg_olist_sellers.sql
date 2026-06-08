@@ -3,13 +3,20 @@ with source as (
 ),
 
 deduped as (
-    select * from source
-    qualify row_number() over (
-        partition by seller_id, seller_zip_code_prefix, seller_city, seller_state
-    ) = 1
+    select
+        md5(
+            coalesce(seller_id,                  '') || '|' ||
+            coalesce(seller_zip_code_prefix,     '') || '|' ||
+            coalesce(seller_city,                '') || '|' ||
+            coalesce(seller_state,               '')
+        ) as row_hash,
+        *
+    from source
+    qualify row_number() over (partition by row_hash) = 1
 )
 
 select
+    row_hash,
     seller_id,
     seller_zip_code_prefix,
     seller_city,

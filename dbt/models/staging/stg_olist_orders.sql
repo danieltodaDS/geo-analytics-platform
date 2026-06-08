@@ -3,16 +3,24 @@ with source as (
 ),
 
 deduped as (
-    select * from source
-    qualify row_number() over (
-        partition by order_id, customer_id, order_status,
-                     order_purchase_timestamp, order_approved_at,
-                     order_delivered_carrier_date, order_delivered_customer_date,
-                     order_estimated_delivery_date
-    ) = 1
+    select
+        md5(
+            coalesce(order_id,                        '') || '|' ||
+            coalesce(customer_id,                     '') || '|' ||
+            coalesce(order_status,                    '') || '|' ||
+            coalesce(order_purchase_timestamp,        '') || '|' ||
+            coalesce(order_approved_at,               '') || '|' ||
+            coalesce(order_delivered_carrier_date,    '') || '|' ||
+            coalesce(order_delivered_customer_date,   '') || '|' ||
+            coalesce(order_estimated_delivery_date,   '')
+        ) as row_hash,
+        *
+    from source
+    qualify row_number() over (partition by row_hash) = 1
 )
 
 select
+    row_hash,
     order_id,
     customer_id,
     order_status,
