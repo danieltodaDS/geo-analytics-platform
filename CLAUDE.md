@@ -30,8 +30,18 @@ Python 3.11, dbt Core, BigQuery, GCS, Streamlit, Terraform
 - Commits semânticos e atômicos — um commit por unidade lógica de trabalho (ex: um arquivo, uma decisão, uma etapa do ciclo). Nunca agrupar etapas distintas do ciclo Explorar/Entender/Especificar/Produtizar em um único commit.
 
 ## Testes obrigatórios
-- not_null + unique em toda PK
+- not_null + unique em toda PK de staging
+- Intermediate: not_null + unique em toda PK, relationships em toda FK, accepted_values em booleanos/status, expression_is_true (valor > 0) em métricas numéricas
+- Marts: todos os testes de intermediate + volume mínimo via dbt_utils ou Elementary
+- Toda coluna exposta em mart deve ter `description` no schema.yml — coluna sem descrição = modelo incompleto
 - Teste unitário cobrindo edge cases da spec
+
+## Documentos normativos
+Leia o documento correspondente **antes** de agir — não depois.
+
+- `docs/roadmap.md` — ao iniciar trabalho em qualquer feature nova ou fase nova
+- `docs/conventions.md` — ao criar qualquer arquivo Python, modelo dbt, coluna, dataset ou variável de ambiente
+- `docs/data_quality.md` — ao escrever qualquer modelo dbt, teste ou sources.yml
 
 ## Agentes
 
