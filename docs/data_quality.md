@@ -62,7 +62,7 @@ Staging espelha a fonte — o contrato é que o dado chegou, não que é único.
 
 ### Duplicata técnica
 Definição: linha byte-a-byte idêntica, originada por retry ou reprocessamento de pipeline — não representa uma entidade diferente.
-Onde remover: **staging** — é ruído de infraestrutura, não lógica de negócio.
+Onde remover: **staging** — obrigatório. É ruído de infraestrutura, não lógica de negócio.
 Como implementar:
 ```sql
 QUALIFY ROW_NUMBER() OVER (PARTITION BY <todas as colunas não-técnicas>) = 1
@@ -112,6 +112,7 @@ models:
 
 ### Por coluna
 
+Exemplo de mart (onde `unique` é obrigatório):
 ```yaml
 columns:
   - name: id_municipio
