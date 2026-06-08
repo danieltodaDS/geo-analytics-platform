@@ -13,7 +13,7 @@ Dois scripts independentes:
 | Script | Fonte | Output raw |
 |---|---|---|
 | `ingestion/src/ibge_localidades.py` | API Localidades | 1 Parquet por execução |
-| `ingestion/src/ibge_censo.py` | SIDRA tabelas 9606, 9605, 9514 | 1 Parquet por tabela por execução |
+| `ingestion/src/ibge_censo.py` | SIDRA tabelas 9514, 10295, 9936 | 1 Parquet por tabela por execução |
 
 ---
 
@@ -45,9 +45,9 @@ Os scripts são implementados uma vez e executados nas três fases progressivas.
 
 ```
 {RAW_BASE_PATH}/ibge_localidades/year={YYYY}/month={MM}/day={DD}/data.parquet
-{RAW_BASE_PATH}/ibge_censo_9606/year={YYYY}/month={MM}/day={DD}/data.parquet
-{RAW_BASE_PATH}/ibge_censo_9605/year={YYYY}/month={MM}/day={DD}/data.parquet
 {RAW_BASE_PATH}/ibge_censo_9514/year={YYYY}/month={MM}/day={DD}/data.parquet
+{RAW_BASE_PATH}/ibge_censo_10295/year={YYYY}/month={MM}/day={DD}/data.parquet
+{RAW_BASE_PATH}/ibge_censo_9936/year={YYYY}/month={MM}/day={DD}/data.parquet
 ```
 
 - `YYYY/MM/DD` = data de execução do script (UTC)
@@ -171,13 +171,27 @@ Se `len(records) < 5500`: logar `warning` e continuar — não abortar. O IBGE p
 
 Coletar as três tabelas do Censo 2022 via SIDRA, validar via Pydantic e gravar um Parquet por tabela no destino definido por `RAW_BASE_PATH`.
 
-### Endpoints
+### Tabelas e endpoints
+
+As URLs por tabela são definidas em `_TABELAS_CONFIG` no script — não há URL genérica que funcione para todas.
+
+| Tabela | Conteúdo | URL | `volume_minimo` |
+|--------|----------|-----|----------------|
+| `9514` | População por sexo e faixa etária | `.../t/9514/n6/all/v/all/p/last` | 11000 |
+| `10295` | Rendimento nominal médio e mediano domiciliar per capita | `.../t/10295/n6/all/v/all/p/last` | 11000 |
+| `9936` | % domicílios com internet (filtrado) | `.../t/9936/n6/all/v/1000381/p/last/c2072/77585/c63/95826` | 5000 |
+
+```python
+_TABELAS_CONFIG: dict[str, dict] = {
+    "9514":  {"url": "https://apisidra.ibge.gov.br/values/t/9514/n6/all/v/all/p/last",  "volume_minimo": 11000},
+    "10295": {"url": "https://apisidra.ibge.gov.br/values/t/10295/n6/all/v/all/p/last", "volume_minimo": 11000},
+    "9936":  {"url": "https://apisidra.ibge.gov.br/values/t/9936/n6/all/v/1000381/p/last/c2072/77585/c63/95826", "volume_minimo": 5000},
+}
+```
+
+A tabela 9936 usa filtros de classificação na URL: `c2072/77585` = existência de internet = Sim; `c63/95826` = condição de ocupação = Total. Sem esses filtros, `v/all` retorna o total de domicílios, não o subconjunto com conexão.
 
 ```
-GET https://apisidra.ibge.gov.br/values/t/9606/n6/all/v/all/p/last
-GET https://apisidra.ibge.gov.br/values/t/9605/n6/all/v/all/p/last
-GET https://apisidra.ibge.gov.br/values/t/9514/n6/all/v/all/p/last
-
 Timeout: 60s  (resposta maior que Localidades)
 Auth: nenhuma
 Paginação: nenhuma — retorna tudo em uma chamada
@@ -218,9 +232,9 @@ class SidraRegistroRaw(BaseModel):
     D3N: str  # Ano
     D4C: str  # Dimensão 4 (Código)
     D4N: str  # Dimensão 4
-    D5C: Optional[str] = None  # Dimensão 5 — apenas 9606 e 9514
+    D5C: Optional[str] = None  # Dimensão 5 — apenas 9514 e 10295
     D5N: Optional[str] = None
-    D6C: Optional[str] = None  # Dimensão 6 — apenas 9606 e 9514
+    D6C: Optional[str] = None  # Dimensão 6 — apenas 9514 e 10295
     D6N: Optional[str] = None
 ```
 
@@ -238,13 +252,13 @@ Mesma configuração do `ibge_localidades.py`. Aplicar o decorator na função d
 |---|---|---|
 | Início da coleta de uma tabela | `info` | `tabela` |
 | Fetch concluído | `info` | `tabela`, `total_registros` |
-| Volume abaixo do esperado | `warning` | `tabela`, `total`, `minimo_esperado=11000` |
+| Volume abaixo do esperado | `warning` | `tabela`, `total`, `minimo_esperado` (valor por tabela de `_TABELAS_CONFIG`) |
 | Parquet gravado | `info` | `tabela`, `destino_path` |
 | Erro fatal em uma tabela | `error` | `tabela`, `exc_info=True` |
 
 ### Guarda de volume
 
-Se `len(records) < 11000` para qualquer tabela: logar `warning` e continuar.
+O limiar é por tabela, conforme `_TABELAS_CONFIG["volume_minimo"]`: 9514 e 10295 → 11000; 9936 → 5000. Se `len(records) < volume_minimo`: logar `warning` e continuar.
 
 ---
 
@@ -270,9 +284,10 @@ Arquivo: `ingestion/tests/test_ibge.py`
 | `test_parse_sidra_valor_suprimido_traco` | `V = "-"` → `None` no model |
 | `test_parse_sidra_valor_suprimido_reticencias` | `V = "..."` → `None` no model |
 | `test_parse_sidra_valor_numerico` | `V = "21494"` → string `"21494"` preservada (cast é do staging) |
-| `test_parse_sidra_tabela_9605_sem_d5_d6` | Registros sem `D5C/D6C` → campos `None` sem erro |
-| `test_parse_sidra_tabela_9606_com_d5_d6` | Registros com `D5C/D6C` → campos preenchidos |
-| `test_volume_guard_warning` | `len < 11000` → `log.warning` chamado |
+| `test_parse_sidra_sem_d5_d6` | Registros sem `D5C/D6C` (ex: 9936) → campos `None` sem erro |
+| `test_parse_sidra_com_d5_d6` | Registros com `D5C/D6C` (ex: 9514, 10295) → campos preenchidos |
+| `test_volume_guard_warning` | `len < volume_minimo` → `log.warning` chamado (usa `_fetch` mockado retornando 10 registros) |
+| `test_volume_guard_9936_limiar_menor` | 9936 com 4999 registros dispara warning; 9514/10295 com 11001 não dispara — limiares distintos verificados isoladamente |
 | `test_retry_5xx` | Tenacity retenta em HTTPError 500 |
 | `test_sem_retry_4xx` | Tenacity não retenta em HTTPError 404 |
 
@@ -285,7 +300,7 @@ Arquivo: `ingestion/tests/test_ibge.py`
 | `V = "-"` ou `V = "..."` no SIDRA | Converter para `None` antes do Pydantic |
 | `data[0]` incluído no DataFrame | Proibido — `_parse_sidra` deve sempre operar sobre `data[1:]` |
 | `len(municípios) < 5500` | `log.warning` — não abortar |
-| `len(registros_sidra) < 11000` por tabela | `log.warning` — não abortar |
+| `len(registros_sidra) < volume_minimo` por tabela | `log.warning` — não abortar (9514/10295: 11000; 9936: 5000) |
 | `HTTPError` 4xx (endpoint errado, tabela inexistente) | Falha imediata sem retry — logar `error` |
 | `HTTPError` 5xx ou timeout | Retry com backoff (até 3 tentativas) |
 | Chave JSON com hífen (`regiao-imediata`) | Acessar via `m["regiao-imediata"]` — nunca via atributo |
