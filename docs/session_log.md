@@ -69,3 +69,12 @@
 - Próximo: Feature 6 — dbt marts
 
 ---
+
+**2026-06-08 (continuação 3)**
+- Descoberta: tabelas SIDRA 9605 e 9606 eram de população desagregada (não renda/internet) — identificadas via exploração empírica
+- Fix completo de ingestão: 9605→10295 (rendimento médio/mediano, R$), 9606→9936 (% domicílios com internet, filtro c2072/77585)
+- `_TABELAS_CONFIG` consolidou 3 dicts separados; novo teste de volume diferenciado por tabela; 35/35 testes passando
+- 43/43 testes dbt staging passando; `docs/understanding/ibge.md` e `docs/vision/fontes_covariaveis_municipais.md` atualizados
+- Próximo: especificar e implementar intermediate IBGE (int_ibge_censo_covariaveis + int_ibge_municipios)
+
+---

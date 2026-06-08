@@ -66,9 +66,9 @@
 **Resumo:** Base demográfica de referência com cobertura para todos os 5.570 municípios. Contém renda domiciliar per capita, escolaridade, estrutura etária, acesso declarado à internet, tipo de domicílio. É a fundação demográfica do modelo de matching — sem ela não há como garantir que tratamento e controle são comparáveis.
 
 **Tabelas-chave no SIDRA:**
-- `9606` — Domicílios com internet por município
-- `9605` — Rendimento médio domiciliar per capita
-- `9514` — População por sexo e faixa etária
+- `9514` — População residente por município (2 variáveis: contagem e % do total)
+- `10295` — Rendimento nominal médio e mediano mensal domiciliar per capita (4 variáveis; `codigo_variavel` úteis: `13431` = médio, `13534` = mediano)
+- `9936` — % domicílios com conexão à internet (requer filtro de classificação na URL — ver `ibge_censo.py`)
 
 ---
 
@@ -270,7 +270,12 @@
 https://servicodados.ibge.gov.br/api/v1/localidades/municipios
 
 # IBGE — SIDRA (Censo 2022)
-https://apisidra.ibge.gov.br/values/t/{tabela}/n6/all/v/all/p/last/
+# 9514 — população (URL genérica)
+https://apisidra.ibge.gov.br/values/t/9514/n6/all/v/all/p/last
+# 10295 — rendimento médio/mediano (URL genérica)
+https://apisidra.ibge.gov.br/values/t/10295/n6/all/v/all/p/last
+# 9936 — % domicílios com internet (c2072/77585=Sim; c63/95826=condição ocupação Total)
+https://apisidra.ibge.gov.br/values/t/9936/n6/all/v/1000381/p/last/c2072/77585/c63/95826
 
 # BCB — PIX por Município
 https://olinda.bcb.gov.br/olinda/servico/Pix_DadosAbertos/versao/v1/odata/TransacoesPorMunicipio
