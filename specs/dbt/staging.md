@@ -10,11 +10,13 @@
 
 ```
 O que chega:    Dado do dataset_raw (Phase 4a: Parquets locais)
-O que muda:     Cast de tipos, renomeação para snake_case, remoção de colunas de partição
-O que NÃO muda: Granularidade — 1 linha raw = 1 linha staging
+O que muda:     Cast de tipos, renomeação para snake_case, remoção de colunas de partição,
+                remoção de duplicatas técnicas (linhas byte-a-byte idênticas)
+O que NÃO muda: Granularidade — 1 linha raw = 1 linha staging (após dedup técnica)
 Regras:         NENHUMA regra de negócio — só limpeza técnica
-                Sem filtros, sem joins, sem agregações
-Critério:       Passou nos testes de schema e PK
+                Sem filtros, sem joins, sem agregações, sem dedup semântica
+Critério:       not_null nos identificadores-chave passando (ADR-008)
+                unique não é testado em staging — garantido no intermediate
 ```
 
 ---
@@ -175,21 +177,23 @@ Testes: `not_null` + `unique` no surrogate; `not_null` em `municipio_ibge` e `an
 
 ## Testes por modelo
 
+`unique` não é testado em staging (ADR-008). Apenas `not_null` nos identificadores mínimos.
+
 | Modelo | Testes |
 |---|---|
-| stg_olist_customers | `not_null(customer_id)`, `unique(customer_id)` |
-| stg_olist_orders | `not_null(order_id)`, `unique(order_id)` |
-| stg_olist_order_items | `not_null(order_item_pk)`, `unique(order_item_pk)` |
-| stg_olist_order_payments | `not_null(payment_pk)`, `unique(payment_pk)` |
-| stg_olist_order_reviews | `not_null(review_id)`, `unique(review_id)` |
+| stg_olist_customers | `not_null(customer_id)` |
+| stg_olist_orders | `not_null(order_id)` |
+| stg_olist_order_items | `not_null(order_item_pk)` |
+| stg_olist_order_payments | `not_null(payment_pk)` |
+| stg_olist_order_reviews | `not_null(review_id)` |
 | stg_olist_geolocation | `not_null(geolocation_zip_code_prefix)` |
-| stg_olist_products | `not_null(product_id)`, `unique(product_id)` |
-| stg_olist_sellers | `not_null(seller_id)`, `unique(seller_id)` |
-| stg_ibge_localidades | `not_null(id_municipio)`, `unique(id_municipio)` |
-| stg_ibge_censo_9606 | `not_null(surrogate_key)`, `unique(surrogate_key)`, `not_null(codigo_municipio)` |
-| stg_ibge_censo_9605 | `not_null(surrogate_key)`, `unique(surrogate_key)`, `not_null(codigo_municipio)` |
-| stg_ibge_censo_9514 | `not_null(surrogate_key)`, `unique(surrogate_key)`, `not_null(codigo_municipio)` |
-| stg_bcb_pix | `not_null(pix_pk)`, `unique(pix_pk)`, `not_null(municipio_ibge)`, `not_null(ano_mes)` |
+| stg_olist_products | `not_null(product_id)` |
+| stg_olist_sellers | `not_null(seller_id)` |
+| stg_ibge_localidades | `not_null(id_municipio)` |
+| stg_ibge_censo_9606 | `not_null(surrogate_key)`, `not_null(codigo_municipio)` |
+| stg_ibge_censo_9605 | `not_null(surrogate_key)`, `not_null(codigo_municipio)` |
+| stg_ibge_censo_9514 | `not_null(surrogate_key)`, `not_null(codigo_municipio)` |
+| stg_bcb_pix | `not_null(pix_pk)`, `not_null(municipio_ibge)`, `not_null(ano_mes)` |
 
 ---
 
