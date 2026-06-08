@@ -24,3 +24,4 @@ dbt/dbt_packages/
 # Folders
 /_archive
 /data
+/exploration
