@@ -1,0 +1,109 @@
+version: 2
+
+models:
+  - name: int_olist_geolocation
+    description: CEP consolidado com centróide lat/lng (avg) e moda de cidade/estado.
+    columns:
+      - name: geolocation_zip_code_prefix
+        data_tests: [not_null, unique]
+
+  - name: int_olist_order_payments_agg
+    description: Pagamentos pivotados por tipo de pagamento, no grão order.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_payment_value >= 0"
+    columns:
+      - name: order_id
+        data_tests: [not_null, unique]
+
+  - name: int_olist_order_items_agg
+    description: Itens de pedido agregados por order_id, com categoria dominante via MODE().
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "items_count > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_revenue >= 0"
+    columns:
+      - name: order_id
+        data_tests: [not_null, unique]
+
+  - name: int_olist_order_reviews_agg
+    description: Review mais recente por pedido. Empate de timestamp é não-determinístico.
+    columns:
+      - name: order_id
+        data_tests: [not_null, unique]
+      - name: review_score
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5]
+                quote: false
+
+  - name: int_dim_customers
+    description: >
+      Dimensão de clientes reais (customer_unique_id) com CEP modal e lat/lng canônicos. Consumida no mart.
+      MODE() em customer_zip_code_prefix — em empate de frequência entre CEPs, resultado é não-determinístico.
+    columns:
+      - name: customer_unique_id
+        data_tests: [not_null, unique]
+
+  - name: int_dim_sellers
+    description: Dimensão de vendedores enriquecida com lat/lng via CEP. Consumida no mart.
+    columns:
+      - name: seller_id
+        data_tests: [not_null, unique]
+
+  - name: int_dim_products
+    description: Dimensão de produtos com product_volume_cm3 derivado. Consumida no mart.
+    columns:
+      - name: product_id
+        data_tests: [not_null, unique]
+
+  - name: int_fact_orders
+    description: Fato central no grão order. Todos os status preservados — filtros são responsabilidade do mart.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_payment_value IS NULL OR total_payment_value >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "items_count IS NULL OR items_count > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "approval_days IS NULL OR approval_days >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "delivery_days IS NULL OR delivery_days >= 0"
+    columns:
+      - name: order_id
+        data_tests: [not_null, unique]
+      - name: customer_unique_id
+        data_tests: [not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_olist_customers')
+                field: customer_id
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [delivered, shipped, canceled, unavailable, invoiced, processing, created, approved]
+      - name: is_on_time
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+      - name: review_score
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5]
+                quote: false

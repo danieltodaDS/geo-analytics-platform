@@ -325,6 +325,19 @@ stg_olist_orders                          (base)
 
 ---
 
+## Débitos técnicos — riscos de dialeto para fase 4b (dbt-bigquery)
+
+Os modelos abaixo usam funções DuckDB que **não existem com a mesma assinatura no BigQuery** e vão quebrar na migração da fase 4b:
+
+| Função | Modelos afetados | Comportamento DuckDB | Equivalente BigQuery |
+|---|---|---|---|
+| `datediff('day', start, end)` | `int_fact_orders` | `end - start` em dias | `DATE_DIFF(end, start, DAY)` — argumentos em **ordem inversa** |
+| `mode(expr)` | `int_olist_geolocation`, `int_dim_customers`, `int_olist_order_items_agg` | Agregado nativo | Não existe nativamente — requer `APPROX_TOP_COUNT(expr, 1)[OFFSET(0)].value` ou window function com `ROW_NUMBER()` |
+
+**Ação na fase 4b:** substituir por macros `dbt_utils.datediff` e implementar macro própria `geo_analytics.mode_agg` com condicional `{% if target.type == 'bigquery' %}` para isolar o dialeto.
+
+---
+
 ## O que esta spec não cobre (próximas iterações)
 
 - Tradução de `product_category_name` PT → EN (arquivo `product_category_name_translation.csv` do dataset Olist)

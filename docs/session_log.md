@@ -60,3 +60,12 @@
 - Próximo: implementar modelos intermediate em dbt (começar pelas pré-agregações, depois dims, depois fact)
 
 ---
+
+**2026-06-08 (continuação 2)**
+- 8 modelos intermediate implementados e passando: int_olist_geolocation, int_olist_order_payments_agg, int_olist_order_items_agg, int_olist_order_reviews_agg, int_dim_customers, int_dim_sellers, int_dim_products, int_fact_orders
+- `dbt_utils 1.3.3` adicionado via `packages.yml` (necessário para `expression_is_true`)
+- 31/31 testes passando; ajustes pós-validação: `total_revenue >= 0`, `not_null` em customer_unique_id, remoção de review_answer_timestamp, documentação de MODE tie em int_dim_customers
+- Débitos técnicos de dialeto documentados na spec: `datediff` e `mode()` incompatíveis com BigQuery — plano de ação na fase 4b
+- Próximo: Feature 6 — dbt marts
+
+---
