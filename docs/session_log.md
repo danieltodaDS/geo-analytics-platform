@@ -87,3 +87,9 @@
 - Próximo: intermediate BCB PIX ou marts
 
 ---
+
+**2026-06-08 (continuação 5)**
+- `logs/` raiz removido e conteúdo appendado ao `dbt/logs/`; `exploration/` removido do git (arquivos preservados no disco)
+- Próximo: intermediate BCB PIX ou marts
+
+---
