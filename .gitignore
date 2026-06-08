@@ -18,6 +18,7 @@ dbt/.user.yml
 dbt/geo_analytics.duckdb
 dbt/target/
 dbt/logs/
+logs/
 dbt/dbt_packages/
 
 # Folders
