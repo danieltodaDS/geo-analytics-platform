@@ -62,7 +62,9 @@ Colunas de partição `year`, `month`, `day` são descartadas em todos os modelo
 
 ### stg_olist_order_reviews
 - Cast de `review_creation_date` e `review_answer_timestamp` (`VARCHAR`) → `TIMESTAMP` via `TRY_CAST`.
-- **PK:** `review_id` — `not_null` + `unique`
+- **Anomalia do dataset:** `review_id` não é único no raw Olist — o mesmo `review_id` aparece vinculado a múltiplos `order_id` diferentes (mesmo texto de avaliação reutilizado em pedidos distintos). Descoberta durante testes.
+- **PK composta:** `(review_id, order_id)` — surrogate `review_id || '-' || order_id`
+- Teste: `not_null` + `unique` no surrogate `review_pk`; `not_null` em `review_id`.
 
 ### stg_olist_geolocation
 - Sem transformações além da regra universal.
@@ -108,7 +110,9 @@ Descartados: `NC`, `NN`, `MC`, `MN`, `D1N` (nome com UF sufixado, redundante com
 
 Grain: `(codigo_municipio, codigo_variavel, codigo_sexo, codigo_cor_raca, codigo_idade)`
 
-Surrogate: `md5(concat(codigo_municipio, '|', codigo_variavel, '|', codigo_sexo, '|', codigo_cor_raca, '|', codigo_idade))`
+Surrogate: `md5(D1C || '|' || D2C || '|' || D4C || '|' || D5C || '|' || D6C)`
+
+**Comportamento de NULL no surrogate:** o operador `||` propaga NULL — se qualquer componente for NULL, o surrogate inteiro vira NULL. O teste `not_null` no surrogate é o guardião: falha imediatamente se o dado vier com chave de dimensão nula. O IBGE não publica chaves nulas, então o risco é baixo; o teste existe para capturar defeitos de ingestão.
 
 Testes: `not_null` + `unique` no surrogate; `not_null` em `codigo_municipio`.
 
@@ -117,11 +121,11 @@ Fonte: Rendimento médio domiciliar per capita — breakdown Cor/Raça.
 
 Mesmo mapeamento que 9606, exceto:
 - `D4C/D4N` → `codigo_cor_raca / cor_raca` (não sexo)
-- Sem D5/D6 (tabela tem apenas 4 dimensões — D5C/D5N/D6C/D6N são NULL no raw)
+- Sem D5/D6 (tabela tem apenas 4 dimensões — D5C/D5N/D6C/D6N são NULL no raw e não são selecionados no staging)
 
 Grain: `(codigo_municipio, codigo_variavel, codigo_cor_raca)`
 
-Surrogate: `md5(concat(codigo_municipio, '|', codigo_variavel, '|', codigo_cor_raca))`
+Surrogate: `md5(D1C || '|' || D2C || '|' || D4C)` — mesmo comportamento de NULL descrito acima.
 
 ### stg_ibge_censo_9514
 Fonte: População por Sexo × Forma de Declaração × Idade.
@@ -134,7 +138,7 @@ Fonte: População por Sexo × Forma de Declaração × Idade.
 
 Grain: `(codigo_municipio, codigo_variavel, codigo_sexo, codigo_declaracao_idade, codigo_idade)`
 
-Surrogate: `md5(concat(codigo_municipio, '|', codigo_variavel, '|', codigo_sexo, '|', codigo_declaracao_idade, '|', codigo_idade))`
+Surrogate: `md5(D1C || '|' || D2C || '|' || D4C || '|' || D5C || '|' || D6C)` — mesmo comportamento de NULL descrito acima.
 
 ### stg_bcb_pix
 Renomeação de PascalCase → snake_case:
