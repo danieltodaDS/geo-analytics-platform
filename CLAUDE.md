@@ -27,15 +27,6 @@ Transversais ao ciclo — lidos conforme gatilhos em "Documentos normativos":
 ## Stack
 Python 3.11, dbt Core, BigQuery, GCS, Streamlit, GitHub Actions
 
-## Ambiente e pacotes
-- Gerenciador de ambiente e dependências: **uv**
-- Instalar pacote: `uv add <pacote>`
-- Instalar dependência de dev: `uv add --dev <pacote>`
-- Rodar script: `uv run python <script>`
-- Rodar testes: `uv run pytest`
-- Sincronizar ambiente: `uv sync`
-- **Nunca usar `pip install` diretamente** — sempre `uv add`
-
 ## Restrições críticas
 - Nunca hardcodar credenciais — variáveis de ambiente obrigatórias; credenciais não entram em código, logs ou commits
 - Commits atômicos — um commit por unidade lógica; nunca agrupar etapas distintas do ciclo Explorar/Entender/Especificar/Produtizar
