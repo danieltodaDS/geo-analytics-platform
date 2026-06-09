@@ -102,3 +102,12 @@
 - Próximo: intermediate BCB PIX ou marts
 
 ---
+
+**2026-06-09 (continuação)**
+- Reestruturação completa da documentação: sources.md removido; geo_lift_scope.md arquivado; docs/normative/ criado (conventions.md + data_quality.md); docs/understanding/ recebeu fontes_covariaveis_municipais.md
+- CLAUDE.md refatorado: seção "Arquitetura de contexto" adicionada; gatilhos ADR determinísticos; redundâncias (Testes, Convenções, Ambiente) removidas; "Restrições críticas" substituiu seções duplicadas
+- conventions.md: absorveu Pydantic (obrigação), structlog, credenciais; corrigiu paths IBGE (9605→10295, 9606→9936)
+- data_quality.md: absorveu contrato entre camadas (Data Flow); gatilho ampliado para cobrir scripts de ingestão
+- Próximo: intermediate BCB PIX ou marts
+
+---
