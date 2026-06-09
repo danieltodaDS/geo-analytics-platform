@@ -168,11 +168,11 @@
 
 **2026-06-09 (continuação 7)**
 - 3 marts implementados: `mart_olist` (id_municipio, ano), `mart_ibge_pix` (id_municipio, ano), `mart_geo_analytics` (id_municipio)
-- `_marts.yml` criado: description em toda coluna exposta, suite completa de testes
-- 42/42 testes passando (expression_is_true, unique, not_null, relationships, unique_combination_of_columns)
-- Macro `normalize_city_name` e colunas `_slug` do intermediate usadas para join ZIP → município IBGE
+- `_marts.yml` criado: description em toda coluna exposta, suite completa de testes; 46/46 testes passando após pós-validação (4 ressalvas resolvidas)
+- Mahalanobis matching (6 covariáveis fixadas empiricamente) incorporado à Feature 9 no roadmap; backlog item 1 reestruturado com progressão Mahalanobis→DiD→PSM→Geo Lift
+- Inconsistência data_quality.md (referência a Fase 2/3 removidas) corrigida
 
-**Última etapa concluída:** Feature 6 — dbt Marts (fase 4a) — Produtizar — pós-validação: 4 ressalvas resolvidas, 46/46 testes passando
-**Em andamento:** — backlog item 1 atualizado: Mahalanobis como matching primário, 6 covariáveis fixadas empiricamente; Feature 7 (Elementary) é o próximo passo da v1
+**Última etapa concluída:** Feature 6 — dbt Marts (fase 4a) — Produtizar — 46/46 testes passando
+**Em andamento:** Feature 7 — Elementary (fase 4a) — não iniciada
 
 ---
