@@ -176,3 +176,12 @@
 **Em andamento:** Feature 7 — Elementary (fase 4a) — não iniciada
 
 ---
+
+**2026-06-09 (continuação 8)**
+- Validação pós-implementação de backlog/roadmap: 4 ressalvas resolvidas (nota de escopo v1 no item 1, desalinhamento temporal das covariáveis, matching com reposição documentado, k=5 definido no roadmap)
+- Nenhum código alterado — apenas documentação
+
+**Última etapa concluída:** Feature 6 — dbt Marts (fase 4a) — Produtizar — documentação pós-validação finalizada
+**Em andamento:** Feature 7 — Elementary (fase 4a) — não iniciada
+
+---
