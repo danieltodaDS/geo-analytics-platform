@@ -93,3 +93,12 @@
 - Próximo: intermediate BCB PIX ou marts
 
 ---
+
+**2026-06-09**
+- ADR-002 supersedida por ADR-009: Cloud Run + Cloud Scheduler eliminados — cargas pontuais/esporádicas não justificam a infra
+- Decisão: GitHub Actions `workflow_dispatch` para ingestão remota; autenticação via Workload Identity Federation (não SA key — repo público)
+- Escopo do `ingest.yml` definido: script → Parquet → GCS → `bq load`; Terraform fora do escopo da v1
+- roadmap.md atualizado: provisionamento GCP one-time (item 15, via gcloud) + renumeração; CLAUDE.md stack corrigida
+- Próximo: intermediate BCB PIX ou marts
+
+---
