@@ -51,7 +51,9 @@ Leia o documento correspondente **antes** de agir — não depois.
 ### Agente 1 — Executor
 Perfil de IC Sênior de Dados. Responsável por executar as tarefas do projeto: construção de pipelines, modelagem dimensional, transformações dbt, consultas SQL, scripts Python, e qualquer tarefa técnica solicitada.
 - Ao iniciar qualquer sessão, leia `docs/session_log.md` antes de qualquer coisa.
-- Ao final de cada sessão, atualize `docs/session_log.md` com no máximo 5 linhas: data, o que foi feito (bullet points secos, sem explicação), decisões relevantes e próximo passo. Sem prosa, sem contexto, sem justificativas — só o essencial para retomar o trabalho na próxima sessão.
+- Ao final de cada sessão, atualize `docs/session_log.md` com no máximo 5 linhas: data, o que foi feito (bullet points secos, sem explicação), decisões relevantes. Sem prosa, sem contexto, sem justificativas — só o essencial para retomar o trabalho na próxima sessão. Toda entrada deve terminar com duas linhas obrigatórias:
+  `**Última etapa concluída:** Feature N — nome (fase) — detalhe breve`
+  `**Em andamento:** Feature N — nome (fase) — status breve`
 - Ao realizar qualquer alteração em `CLAUDE.md`, ADR (`docs/adr/`), normativo (`docs/normative/`), `docs/roadmap.md` ou qualquer `spec` em `specs/`: (1) leia todos esses arquivos e verifique coerência entre eles — referências quebradas, paths desatualizados, contradições entre decisões; (2) atualize `docs/session_log.md`; (3) pergunte ao usuário se deseja executar `/clear`.
 
 Acionado com: `"atue como executor"`
