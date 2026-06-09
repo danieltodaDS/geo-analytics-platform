@@ -101,6 +101,35 @@ models:
       - name: macroregiao_nome
         data_tests: [not_null]
 
+  - name: int_bcb_pix_municipio
+    description: PIX por município/mês — ano_mes convertido para DATE, totais pagador/recebedor derivados.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [municipio_ibge, ano_mes_data]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "vl_total_pagador >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "vl_total_recebedor >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "qt_total_transacoes_pagador >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "qt_total_transacoes_recebedor >= 0"
+    columns:
+      - name: municipio_ibge
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_ibge_municipios')
+                field: id_municipio
+      - name: ano_mes_data
+        data_tests: [not_null]
+
   - name: int_fact_orders
     description: Fato central no grão order. Todos os status preservados — filtros são responsabilidade do mart.
     data_tests:
