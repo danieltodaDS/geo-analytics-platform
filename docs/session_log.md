@@ -115,8 +115,8 @@
 **2026-06-09 (continuação 2)**
 - `int_bcb_pix_municipio` implementado: cast ano_mes YYYYMM → DATE, totais pagador/recebedor derivados; 15/15 testes passando (PK composta, FK → int_ibge_municipios, expression_is_true)
 - `specs/dbt/intermediate_bcb.md` criada; débito técnico `strptime` vs `PARSE_DATE` documentado para fase 4b
-
 - `CLAUDE.md` atualizado: formato obrigatório de session_log adicionado (Última etapa concluída + Em andamento)
+- `mart_geo_lift` renomeado para `mart_geo_analytics` em toda a documentação (roadmap, normativas, README, ADR-005, understanding)
 
 **Última etapa concluída:** Feature 5 — dbt Intermediate (fase 4a) — todos os modelos implementados e testados (Olist, IBGE, BCB PIX)
 **Em andamento:** Feature 6 — dbt Marts (fase 4a) — não iniciada; spec ainda não existe
