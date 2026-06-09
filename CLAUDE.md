@@ -7,11 +7,11 @@ Toda feature de produção segue: Explorar → Entender → Especificar → Prod
 A produtização segue três fases progressivas — nunca pule etapas:
   4a. Local A — Parquet em data/raw/ local; dbt roda via dbt-duckdb; Streamlit como protótipo local contra DuckDB
   4b. Local B — Parquet local inalterado; dbt migrado para dbt-bigquery (ajustes de dialeto esperados); Streamlit contra BigQuery
-  4c. Remoto  — Cloud Run + GCS + BigQuery em produção
+  4c. Remoto  — GitHub Actions + GCS + BigQuery em produção (ADR-009)
 Antes de gerar código de produção, leia a spec correspondente em /specs.
 
 ## Stack
-Python 3.11, dbt Core, BigQuery, GCS, Streamlit, Terraform
+Python 3.11, dbt Core, BigQuery, GCS, Streamlit, GitHub Actions
 
 ## Ambiente e pacotes
 - Gerenciador de ambiente e dependências: **uv**

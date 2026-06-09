@@ -60,11 +60,10 @@ A v1 só está concluída quando o projeto estiver rodando de ponta a ponta nas 
 - Streamlit aponta para BigQuery
 
 **Remoto (GCP):**
-- Ingestão via Cloud Run Jobs
-- Orquestração via Cloud Scheduler
+- Ingestão via GitHub Actions `workflow_dispatch` — mesmo script Python, sem Docker ou Cloud Run
 - Parquet no GCS → BigQuery — raw → staging → intermediate → mart
-- IaC via Terraform provisionado
-- CI/CD via GitHub Actions ativo
+- dbt via GitHub Actions (dbt-core) ou dbt Cloud — ambos válidos
+- CI/CD via GitHub Actions ativo (`ci.yml` para PRs, `ingest.yml` para ingestão manual)
 
 Nenhum componente é opcional para considerar a v1 entregue.
 
@@ -252,8 +251,8 @@ Cobre Localidades e Censo 2022 — duas APIs distintas no mesmo domínio.
 #### Feature 8 — CI/CD GitHub Actions
 
 **Produtizar** (sem exploração necessária)
-- `ci.yml` — pytest + dbt compile + dbt test + terraform plan (todo PR)
-- `deploy.yml` — build Docker + push Artifact Registry + deploy Cloud Run (merge na main)
+- `ci.yml` — pytest + dbt compile + dbt test (todo PR)
+- `ingest.yml` — `workflow_dispatch` com input de fonte; executa script de ingestão + upload para GCS
 
 ---
 
@@ -300,12 +299,11 @@ Documentação
 14. Feature 9 — Streamlit                (4b: Streamlit → BigQuery)
 
 --- Preparação para remoto ---
-15. Terraform — provisiona infraestrutura GCP
-16. Feature 8 — CI/CD GitHub Actions
+15. Feature 8 — CI/CD GitHub Actions (ci.yml + ingest.yml)
 
 --- Remoto — GCP em produção ---
-17. Features 1–7                         (4c: Cloud Run + GCS + BigQuery)
-18. Feature 9 — Streamlit                (4c: deploy final)
+16. Features 1–7                         (4c: GitHub Actions + GCS + BigQuery)
+17. Feature 9 — Streamlit                (4c: deploy final)
 
 Documentação final
 16. Documentar prompts Claude Code usados

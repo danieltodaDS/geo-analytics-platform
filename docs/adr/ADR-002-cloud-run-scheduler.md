@@ -1,6 +1,6 @@
 # ADR-002: Cloud Run + Cloud Scheduler para Ingestão em Produção
 
-**Status:** Aceito
+**Status:** Supersedida por [ADR-009](ADR-009-github-actions-ingestao-remota.md)
 **Data:** Junho/2026
 
 ---
