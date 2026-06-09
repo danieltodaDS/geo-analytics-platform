@@ -1,0 +1,326 @@
+version: 2
+
+models:
+  - name: mart_olist
+    description: >
+      Métricas de e-commerce Olist agregadas por município do comprador e ano (2017–2018).
+      Geocodificação via ZIP → geolocation_city_slug → int_ibge_municipios. Cobertura: 99,2% dos pedidos.
+      Pedidos sem mapeamento para município são descartados.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [id_municipio, ano]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_pedidos > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "pedidos_entregues >= 0 AND pedidos_entregues <= total_pedidos"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "taxa_entrega IS NULL OR (taxa_entrega >= 0 AND taxa_entrega <= 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "taxa_cancelamento IS NULL OR (taxa_cancelamento >= 0 AND taxa_cancelamento <= 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "receita_total IS NULL OR receita_total >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "ticket_medio IS NULL OR ticket_medio >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_dias_entrega IS NULL OR avg_dias_entrega >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_review_score IS NULL OR (avg_review_score >= 1 AND avg_review_score <= 5)"
+    columns:
+      - name: id_municipio
+        description: Código IBGE do município (7 dígitos). PK composta com ano.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_ibge_municipios')
+                field: id_municipio
+      - name: nome_municipio
+        description: Nome oficial do município conforme IBGE.
+        data_tests: [not_null]
+      - name: uf_sigla
+        description: Sigla da unidade federativa (ex. SP, RJ).
+        data_tests: [not_null]
+      - name: macroregiao_nome
+        description: Nome da macrorregião brasileira (Norte, Nordeste, Centro-Oeste, Sudeste, Sul).
+        data_tests: [not_null]
+      - name: ano
+        description: Ano de compra extraído de order_purchase_timestamp.
+        data_tests: [not_null]
+      - name: total_pedidos
+        description: Total de pedidos no município/ano, todos os status.
+      - name: pedidos_entregues
+        description: Pedidos com order_status = 'delivered'.
+      - name: pedidos_cancelados
+        description: Pedidos com order_status IN ('canceled', 'unavailable').
+      - name: pedidos_em_andamento
+        description: Pedidos com order_status IN ('shipped', 'invoiced', 'processing', 'approved', 'created').
+      - name: taxa_entrega
+        description: pedidos_entregues / total_pedidos.
+      - name: taxa_cancelamento
+        description: pedidos_cancelados / total_pedidos.
+      - name: clientes_unicos
+        description: Clientes distintos por customer_unique_id, todos os status.
+      - name: vendedores_no_municipio
+        description: >
+          Sellers com sede no município via seller_city_slug = nome_municipio_slug.
+          Atemporal — dataset Olist é estático; mesmo valor para 2017 e 2018. NULL se nenhum seller localizado.
+      - name: receita_total
+        description: Soma de total_revenue para pedidos entregues (R$).
+      - name: ticket_medio
+        description: Média de total_revenue para pedidos entregues (R$).
+      - name: frete_medio
+        description: Média de total_freight_value para pedidos entregues (R$).
+      - name: share_frete
+        description: frete total entregues / receita total entregues.
+      - name: pct_pagamento_cartao
+        description: Proporção do valor pago em cartão de crédito sobre total_payment_value (pedidos entregues).
+      - name: pct_pagamento_boleto
+        description: Proporção do valor pago em boleto sobre total_payment_value (pedidos entregues).
+      - name: avg_parcelas_cartao
+        description: Média de parcelas de cartão de crédito (apenas pedidos entregues com credit_card_value > 0).
+      - name: avg_dias_entrega
+        description: Média de dias entre compra e entrega efetiva (pedidos entregues).
+      - name: avg_dias_aprovacao
+        description: Média de dias entre compra e aprovação do pagamento (pedidos entregues).
+      - name: taxa_entrega_no_prazo
+        description: Proporção de pedidos is_on_time = true sobre pedidos entregues.
+      - name: avg_review_score
+        description: Média do review_score (1–5); pedidos sem review excluídos nativamente pelo AVG.
+      - name: pct_avaliacao_positiva
+        description: Proporção de reviews com score >= 4 sobre pedidos com review.
+      - name: pct_avaliacao_negativa
+        description: Proporção de reviews com score <= 2 sobre pedidos com review.
+      - name: pct_pedidos_com_review
+        description: Proporção de pedidos entregues que receberam review.
+
+  - name: mart_ibge_pix
+    description: >
+      Covariáveis municipais do Censo 2022 (IBGE) combinadas com métricas PIX anuais por município.
+      Grain: 1 linha por (id_municipio, ano). Cobre todos os 5.571 municípios brasileiros.
+      Anos parciais incluídos; n_meses_pix sinaliza completude.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [id_municipio, ano]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_transacoes_pagador >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_valor_pagador >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_valor_recebedor >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "pct_transacoes_pagador_pf IS NULL OR (pct_transacoes_pagador_pf >= 0 AND pct_transacoes_pagador_pf <= 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "pct_valor_recebedor_pj IS NULL OR (pct_valor_recebedor_pj >= 0 AND pct_valor_recebedor_pj <= 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "n_meses_pix >= 1 AND n_meses_pix <= 12"
+    columns:
+      - name: id_municipio
+        description: Código IBGE do município (7 dígitos). PK composta com ano.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_ibge_municipios')
+                field: id_municipio
+      - name: nome_municipio
+        description: Nome oficial do município conforme IBGE.
+        data_tests: [not_null]
+      - name: uf_sigla
+        description: Sigla da unidade federativa.
+        data_tests: [not_null]
+      - name: macroregiao_nome
+        description: Nome da macrorregião brasileira.
+        data_tests: [not_null]
+      - name: ano
+        description: Ano das transações PIX.
+        data_tests: [not_null]
+      - name: populacao_residente
+        description: População residente do município (Censo 2022).
+      - name: renda_media_per_capita
+        description: Rendimento médio mensal domiciliar per capita em R$ (Censo 2022, SIDRA 10295).
+      - name: renda_mediana_per_capita
+        description: Rendimento mediano mensal domiciliar per capita em R$ (Censo 2022, SIDRA 10295).
+      - name: pct_domicilios_com_internet
+        description: Percentual de domicílios com acesso à internet (Censo 2022, SIDRA 9936).
+      - name: total_transacoes_pagador
+        description: Total de transações PIX de saída no município no ano.
+      - name: total_valor_pagador
+        description: Valor total das transações PIX de saída no município no ano (R$).
+      - name: qt_pagador_pf
+        description: Total de transações PIX de saída realizadas por pessoas físicas. Exposto como raw para re-agregação.
+      - name: valor_pix_per_capita
+        description: total_valor_pagador / populacao_residente.
+      - name: transacoes_pix_per_capita
+        description: total_transacoes_pagador / populacao_residente.
+      - name: pct_transacoes_pagador_pf
+        description: qt_pagador_pf / total_transacoes_pagador.
+      - name: total_transacoes_recebedor
+        description: Total de transações PIX de entrada no município no ano.
+      - name: total_valor_recebedor
+        description: Valor total das transações PIX de entrada no município no ano (R$).
+      - name: vl_recebedor_pj
+        description: Valor recebido por pessoas jurídicas no município no ano. Exposto como raw para re-agregação.
+      - name: qt_recebedor_pj
+        description: Quantidade de transações recebidas por pessoas jurídicas. Exposto como raw para re-agregação.
+      - name: pct_valor_recebedor_pj
+        description: vl_recebedor_pj / total_valor_recebedor.
+      - name: pct_transacoes_recebedor_pj
+        description: qt_recebedor_pj / total_transacoes_recebedor.
+      - name: n_meses_pix
+        description: Número de meses distintos com dados PIX no ano. Máximo 12; anos parciais terão valor menor.
+
+  - name: mart_geo_analytics
+    description: >
+      Mart final para análise cross-domínio: Olist 2018 × IBGE Censo 2022 × PIX período total (2020–2026).
+      Grain: 1 linha por id_municipio. Restrito aos municípios com ao menos um pedido Olist em 2018.
+      Limitação: fontes não são contemporâneas — comparações causais diretas requerem controle de período.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "total_pedidos > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "pedidos_entregues >= 0 AND pedidos_entregues <= total_pedidos"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "taxa_entrega IS NULL OR (taxa_entrega >= 0 AND taxa_entrega <= 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "taxa_cancelamento IS NULL OR (taxa_cancelamento >= 0 AND taxa_cancelamento <= 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "receita_total IS NULL OR receita_total >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "ticket_medio IS NULL OR ticket_medio >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_dias_entrega IS NULL OR avg_dias_entrega >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "avg_review_score IS NULL OR (avg_review_score >= 1 AND avg_review_score <= 5)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "receita_total IS NULL OR receita_por_habitante >= 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "penetracao_olist IS NULL OR (penetracao_olist >= 0 AND penetracao_olist <= 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "pct_transacoes_pagador_pf IS NULL OR (pct_transacoes_pagador_pf >= 0 AND pct_transacoes_pagador_pf <= 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "pct_valor_recebedor_pj IS NULL OR (pct_valor_recebedor_pj >= 0 AND pct_valor_recebedor_pj <= 1)"
+    columns:
+      - name: id_municipio
+        description: Código IBGE do município (7 dígitos). PK.
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('int_ibge_municipios')
+                field: id_municipio
+      - name: nome_municipio
+        description: Nome oficial do município. Fonte autoritativa é mart_ibge_pix.
+        data_tests: [not_null]
+      - name: uf_sigla
+        description: Sigla da unidade federativa. Fonte autoritativa é mart_ibge_pix.
+        data_tests: [not_null]
+      - name: macroregiao_nome
+        description: Nome da macrorregião brasileira. Fonte autoritativa é mart_ibge_pix.
+        data_tests: [not_null]
+      - name: total_pedidos
+        description: Total de pedidos Olist no município em 2018, todos os status.
+      - name: pedidos_entregues
+        description: Pedidos Olist com order_status = 'delivered' em 2018.
+      - name: pedidos_cancelados
+        description: Pedidos Olist com order_status IN ('canceled', 'unavailable') em 2018.
+      - name: pedidos_em_andamento
+        description: Pedidos Olist com status de processamento em 2018.
+      - name: taxa_entrega
+        description: pedidos_entregues / total_pedidos (2018).
+      - name: taxa_cancelamento
+        description: pedidos_cancelados / total_pedidos (2018).
+      - name: clientes_unicos
+        description: Clientes distintos por customer_unique_id em 2018.
+      - name: vendedores_no_municipio
+        description: Sellers com sede no município (atemporal — dataset Olist estático).
+      - name: receita_total
+        description: Receita de pedidos entregues em 2018 (R$).
+      - name: ticket_medio
+        description: Ticket médio de pedidos entregues em 2018 (R$).
+      - name: frete_medio
+        description: Frete médio de pedidos entregues em 2018 (R$).
+      - name: share_frete
+        description: Participação do frete na receita total (pedidos entregues em 2018).
+      - name: pct_pagamento_cartao
+        description: Proporção do valor pago em cartão de crédito (pedidos entregues em 2018).
+      - name: pct_pagamento_boleto
+        description: Proporção do valor pago em boleto (pedidos entregues em 2018).
+      - name: avg_parcelas_cartao
+        description: Média de parcelas de cartão de crédito (pedidos entregues em 2018 com crédito).
+      - name: avg_dias_entrega
+        description: Média de dias entre compra e entrega (pedidos entregues em 2018).
+      - name: avg_dias_aprovacao
+        description: Média de dias entre compra e aprovação (pedidos entregues em 2018).
+      - name: taxa_entrega_no_prazo
+        description: Proporção de pedidos entregues dentro do prazo estimado em 2018.
+      - name: avg_review_score
+        description: Média do review score (1–5) em 2018.
+      - name: pct_avaliacao_positiva
+        description: Proporção de reviews com score >= 4 em 2018.
+      - name: pct_avaliacao_negativa
+        description: Proporção de reviews com score <= 2 em 2018.
+      - name: pct_pedidos_com_review
+        description: Proporção de pedidos entregues em 2018 que receberam review.
+      - name: populacao_residente
+        description: População residente (Censo 2022).
+      - name: renda_media_per_capita
+        description: Rendimento médio mensal domiciliar per capita em R$ (Censo 2022).
+      - name: renda_mediana_per_capita
+        description: Rendimento mediano mensal domiciliar per capita em R$ (Censo 2022).
+      - name: pct_domicilios_com_internet
+        description: Percentual de domicílios com internet (Censo 2022).
+      - name: total_transacoes_pagador
+        description: Total acumulado de transações PIX de saída no município (2020–2026).
+      - name: total_transacoes_recebedor
+        description: Total acumulado de transações PIX de entrada no município (2020–2026). Exposto para re-derivação de pct_transacoes_recebedor_pj pelo consumidor.
+      - name: total_valor_pagador
+        description: Valor acumulado das transações PIX de saída (R$, 2020–2026).
+      - name: total_valor_recebedor
+        description: Valor acumulado das transações PIX de entrada (R$, 2020–2026).
+      - name: valor_pix_per_capita
+        description: total_valor_pagador / populacao_residente (re-derivado sobre período total).
+      - name: transacoes_pix_per_capita
+        description: total_transacoes_pagador / populacao_residente (re-derivado sobre período total).
+      - name: pct_transacoes_pagador_pf
+        description: Proporção de transações PIX de saída realizadas por pessoas físicas (período total).
+      - name: pct_valor_recebedor_pj
+        description: Proporção do valor PIX recebido por pessoas jurídicas (período total).
+      - name: pct_transacoes_recebedor_pj
+        description: Proporção de transações PIX recebidas por pessoas jurídicas (período total).
+      - name: anos_pix_disponiveis
+        description: Número de anos distintos com dados PIX para o município.
+      - name: receita_por_habitante
+        description: receita_total (Olist 2018) / populacao_residente (Censo 2022).
+      - name: pedidos_por_habitante
+        description: total_pedidos (Olist 2018) / populacao_residente (Censo 2022).
+      - name: penetracao_olist
+        description: clientes_unicos (Olist 2018) / populacao_residente (Censo 2022).
