@@ -173,6 +173,6 @@
 - Macro `normalize_city_name` e colunas `_slug` do intermediate usadas para join ZIP → município IBGE
 
 **Última etapa concluída:** Feature 6 — dbt Marts (fase 4a) — Produtizar — pós-validação: 4 ressalvas resolvidas, 46/46 testes passando
-**Em andamento:** — Feature 6 concluída; próximo passo a definir (fase 4b ou Streamlit protótipo)
+**Em andamento:** — backlog item 1 atualizado: Mahalanobis como matching primário, 6 covariáveis fixadas empiricamente; Feature 7 (Elementary) é o próximo passo da v1
 
 ---

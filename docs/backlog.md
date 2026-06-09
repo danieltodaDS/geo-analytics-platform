@@ -18,60 +18,104 @@ Comparações ingênuas introduzem três vieses:
 - **Viés de seleção:** regiões que recebem o produto primeiro tendem a ser diferentes (mais ricas, mais digitalizadas). Comparar diretamente é comparar coisas diferentes.
 - **Spillover:** em A/B por usuário, controle pode ser contaminado pelo tratamento. Regiões geográficas são naturalmente isoladas.
 
-### Técnicas a explorar e comparar
+### Progressão de técnicas
 
-| Técnica | Biblioteca | O que resolve |
-|---|---|---|
-| Diferença em Diferenças (DiD) | `statsmodels`, `linearmodels` | Viés temporal + estimativa de impacto |
-| Propensity Score Matching | `sklearn` | Viés de seleção via probabilidade de tratamento |
-| Geo Lift | pacote R `GeoLift` | Matching + DiD + teste de permutação integrados |
+A sequência vai do mais simples para o mais robusto. Cada etapa valida e alimenta a seguinte.
 
-Avaliar robustez comparando resultados entre técnicas. Convergência entre métodos é evidência mais forte do que um único resultado.
+```
+1. Mahalanobis matching      → define o grupo de controle
+         ↓
+2. DiD sobre os pares        → estima o lift causal
+         ↓
+3. PSM como matching alternativo → valida a robustez da seleção
+         ↓
+4. Geo Lift (R)              → contraste independente com teste de permutação
+```
+
+| Etapa | Técnica | Biblioteca | Papel |
+|---|---|---|---|
+| Matching 1 | Distância de Mahalanobis | `scipy` | Seleção de controles — simples, sem modelo |
+| Estimativa | Diferença em Diferenças (DiD) | `statsmodels` | Lift causal com controle de tendência temporal |
+| Matching 2 | Propensity Score Matching (PSM) | `sklearn` | Matching alternativo via modelo — valida robustez |
+| Contraste | Geo Lift | pacote R `GeoLift` | Pipeline completo independente com permutação |
+
+Convergência entre Mahalanobis+DiD e PSM+DiD é evidência de robustez da seleção. Convergência com Geo Lift é evidência de robustez da estimativa causal.
 
 > **Nota:** Geo Lift requer ambiente R separado (`renv` ou equivalente). As demais técnicas são Python puro.
 
 ### Covariáveis de matching
 
-**Nível 1 — Contexto socioeconômico (disponível no mart_geo_analytics):**
-- população, renda per capita, % domicílios com internet, volume PIX
+6 variáveis fixadas — escolha baseada em correlação empírica verificada no `mart_geo_analytics`:
 
-**Nível 2 — Comportamento de e-commerce no pré-período:**
-- volume de pedidos pré, ticket médio pré, categorias distintas, sazonalidade
+**Estruturais (contexto do município):**
+- `populacao_residente` — escala do mercado
+- `renda_media_per_capita` — poder de compra
+- `pct_domicilios_com_internet` — infraestrutura digital
 
-O Nível 2 é o mais importante — comportamento passado é o preditor mais forte de comportamento futuro.
+**Negócio (comportamento de e-commerce):**
+- `penetracao_olist` — adoção de e-commerce por habitante (normalizada)
+- `ticket_medio` — tamanho do ticket médio de compra
+- `pct_pagamento_cartao` — acesso a crédito e formalização financeira
 
-### Esboço de implementação — Matching
+Correlações entre as 6 variáveis são todas baixas (|r| < 0.21) — sem redundância relevante. `avg_dias_entrega` foi descartada por correlação moderada com `pct_domicilios_com_internet` (-0.20) em favor de `pct_pagamento_cartao`, que captura uma dimensão independente.
+
+> Covariáveis adicionais do item 5 (CAGED, Anatel SCM) podem enriquecer o matching em versões futuras.
+
+### Esboço de implementação — Matching por Mahalanobis
 
 ```python
+import numpy as np
 import pandas as pd
+from scipy.spatial.distance import cdist
+
+features = [
+    'populacao_residente', 'renda_media_per_capita', 'pct_domicilios_com_internet',
+    'penetracao_olist', 'ticket_medio', 'pct_pagamento_cartao'
+]
+
+df_trat = df[df.grupo == 'tratamento'][features]
+df_ctrl = df[df.grupo == 'controle'][features]
+
+# Mahalanobis usa a inversa da matriz de covariância do conjunto completo
+VI = np.linalg.inv(np.cov(df[features].T))
+
+distancias = cdist(df_trat, df_ctrl, metric='mahalanobis', VI=VI)
+
+# Para cada tratado: índice do controle mais próximo
+indices_ctrl = distancias.argmin(axis=1)
+
+df_matched = pd.concat([
+    df[df.grupo == 'tratamento'].reset_index(drop=True),
+    df[df.grupo == 'controle'].iloc[indices_ctrl].reset_index(drop=True)
+])
+```
+
+Critério de qualidade do matching: SMD < 0.1 em todas as covariáveis após o pareamento.
+
+### Esboço de implementação — Matching alternativo por PSM
+
+```python
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import NearestNeighbors
 
-features = ['populacao', 'renda_per_capita', 'pct_internet',
-            'volume_pix', 'volume_pedidos_pre', 'ticket_medio_pre']
-
 X = StandardScaler().fit_transform(df[features])
 
-# 1. Calcular propensity score
 lr = LogisticRegression()
 lr.fit(X, df['grupo_binario'])
 df['propensity_score'] = lr.predict_proba(X)[:, 1]
 
-# 2. Parear cada tratado com o controle de score mais próximo (1D)
 ps_trat = df.loc[df.grupo == 'tratamento', 'propensity_score'].values.reshape(-1, 1)
 ps_ctrl = df.loc[df.grupo == 'controle',   'propensity_score'].values.reshape(-1, 1)
 
 nn = NearestNeighbors(n_neighbors=1).fit(ps_ctrl)
 _, indices = nn.kneighbors(ps_trat)
 
-df_matched = pd.concat([
+df_matched_psm = pd.concat([
     df[df.grupo == 'tratamento'],
     df[df.grupo == 'controle'].iloc[indices.flatten()]
 ])
 ```
-
-Critério de seleção: SMD < 0.1 em todas as covariáveis após matching.
 
 ### Esboço de implementação — DiD
 
@@ -80,11 +124,11 @@ import statsmodels.formula.api as smf
 
 # Formato longo: uma linha por (municipio, periodo)
 # periodo_pos: 0 = pré, 1 = pós | tratamento: 0 = controle, 1 = tratado
-# tratamento_pos: termo de interação — coeficiente é o lift causal
+# tratamento:periodo_pos: termo de interação — coeficiente é o lift causal
 
 modelo = smf.ols(
     'metrica ~ tratamento + periodo_pos + tratamento:periodo_pos',
-    data=df
+    data=df_matched  # aplicar sobre df_matched ou df_matched_psm para comparar
 ).fit()
 
 lift    = modelo.params['tratamento:periodo_pos']
@@ -92,8 +136,7 @@ p_value = modelo.pvalues['tratamento:periodo_pos']
 ic_95   = modelo.conf_int().loc['tratamento:periodo_pos']
 ```
 
-Validação obrigatória: tendências paralelas no pré-período.
-Aplicar sobre `df_matched` após Propensity Score Matching para estimativa ajustada.
+Validação obrigatória: tendências paralelas no pré-período antes de interpretar o coeficiente como causal.
 
 ### Dados sintéticos
 
@@ -101,16 +144,14 @@ Se não houver campanha real, simular tratamento com atribuição aleatória est
 
 ### Como iniciar
 
-1. Explorar: inspecionar `mart_geo_analytics`, verificar cobertura temporal e distribuição de covariáveis
+1. Explorar: inspecionar `mart_geo_analytics`, verificar distribuição das 6 covariáveis
 2. Definir grupos (tratamento/controle) — por data de entrada do produto ou atribuição sintética
 3. Especificar → `specs/ds/inferencia_causal.md`
-4. Sequência sugerida (Python):
-   - DiD simples sem matching — baseline; valida tendências paralelas e produz estimativa inicial
-   - Propensity Score Matching → selecionar pares → reaplicar DiD sobre `df_matched`
-   - Comparar os dois resultados: a diferença indica o grau de viés de seleção
-5. Geo Lift (R) como contraste independente — montar ambiente R separado (`renv`); rodar após as técnicas Python para validação cruzada dos resultados
-
-> Covariáveis adicionais do item 4 (CAGED, Anatel SCM) enriquecem o matching — quanto mais rico o Nível 1, mais preciso o pareamento.
+4. Sequência de implementação:
+   - Mahalanobis matching → verificar SMD < 0.1 → DiD sobre os pares (baseline simples)
+   - PSM → DiD sobre `df_matched_psm` — comparar com resultado anterior
+   - Diferença entre os dois resultados indica sensibilidade à escolha do método de matching
+5. Geo Lift (R) como contraste independente após as técnicas Python
 
 ---
 
