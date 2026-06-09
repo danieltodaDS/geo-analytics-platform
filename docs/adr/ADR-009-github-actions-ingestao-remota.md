@@ -28,7 +28,7 @@ Com esse perfil de carga, o problema a resolver não é "agendamento confiável"
 `workflow_dispatch` resolve exatamente esse problema:
 - Acionável via GitHub UI, CLI (`gh workflow run`) ou API — sem depender do ambiente local
 - Os scripts já usam `uv`; um runner do GitHub Actions executa `uv sync && uv run python ingest.py` sem Docker, Artifact Registry ou IAM de Cloud Run
-- Free tier do GitHub Actions (2.000 min/mês em repositórios públicos) cobre anos de execução esporádica
+- Repositórios públicos têm minutos ilimitados no GitHub Actions — sem cota a monitorar
 - Zero infraestrutura para provisionar: sem bucket de estado Terraform, sem service account de Cloud Run, sem regras de IAM de Jobs
 
 ## Alternativas descartadas
@@ -41,16 +41,29 @@ Com esse perfil de carga, o problema a resolver não é "agendamento confiável"
 
 ## Consequências
 
-- Terraform deixa de ser necessário para a v1 — sem infraestrutura GCP para versionar além do que o BigQuery e GCS já provisionam via console ou script único
+- Terraform deixa de ser necessário para a v1 — BigQuery dataset e bucket GCS são provisionados uma única vez via `gcloud` (ver comandos em `docs/conventions.md`)
 - A fase "Remoto" do roadmap é reduzida: sem `deploy.yml` de build/push de imagem, apenas `ingest.yml` com `workflow_dispatch`
+- O `ingest.yml` cobre o pipeline completo: `uv run python ingest.py` → Parquet em GCS → `bq load` no dataset raw do BigQuery
 - dbt na fase remota roda via dbt-core em GitHub Actions (step `dbt run --target prod`) ou dbt Cloud — ambos válidos; dbt Cloud opcional para portfólio
+
+### Autenticação GCP no runner
+
+O runner precisa de credenciais para escrever no GCS e no BigQuery. Duas abordagens:
+
+| Abordagem | Como funciona | Risco |
+|---|---|---|
+| **Workload Identity Federation (recomendado)** | Runner se autentica via OIDC; GCP emite token de curta duração. Sem segredo persistente armazenado no GitHub | Requer criação de pool de identidade e binding de service account no GCP |
+| Service account JSON key | Chave JSON armazenada como secret no GitHub Actions | Segredo de longa duração — vazamento acidental em log ou PR expõe acesso ao projeto GCP |
+
+**Decisão para a v1:** Workload Identity Federation. Repositório público de portfólio: o risco de uma service account key vazar em um log de workflow ou diff de PR é concreto. WIF elimina o segredo persistente; o custo de setup (pool + binding) é único e documentado na Feature 8.
 
 ```
 Local                     Remoto
 Makefile                  GitHub Actions (workflow_dispatch)
     ↓                         ↓
-uv run python script.py   uv run python script.py
+uv run python ingest.py   uv run python ingest.py
     ↓                         ↓
-         mesmo script Python
-         mesmo uv.lock
+Parquet em data/raw/      Parquet em GCS
+                              ↓
+                          bq load → dataset_raw no BigQuery
 ```

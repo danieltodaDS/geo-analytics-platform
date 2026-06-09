@@ -299,17 +299,19 @@ Documentação
 14. Feature 9 — Streamlit                (4b: Streamlit → BigQuery)
 
 --- Preparação para remoto ---
-15. Feature 8 — CI/CD GitHub Actions (ci.yml + ingest.yml)
+15. Provisionamento GCP (one-time, via gcloud):
+    - Bucket GCS para Parquet raw
+    - Datasets BigQuery: dataset_raw, dbt_staging, dbt_intermediate, dbt_marts
+    - Service account + Workload Identity Federation para GitHub Actions (ADR-009)
+16. Feature 8 — CI/CD GitHub Actions (ci.yml + ingest.yml)
 
 --- Remoto — GCP em produção ---
-16. Features 1–7                         (4c: GitHub Actions + GCS + BigQuery)
-17. Feature 9 — Streamlit                (4c: deploy final)
+17. Features 1–7                         (4c: GitHub Actions + GCS + BigQuery)
+18. Feature 9 — Streamlit                (4c: deploy final)
 
 Documentação final
-16. Documentar prompts Claude Code usados
+19. Documentar prompts Claude Code usados
 ```
-
-> O Terraform entra só quando o pipeline está validado no Local B — você já sabe exatamente o que precisa provisionar.
 
 ---
 
