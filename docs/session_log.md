@@ -122,3 +122,14 @@
 **Em andamento:** Feature 6 — dbt Marts (fase 4a) — não iniciada; spec ainda não existe
 
 ---
+
+**2026-06-09 (continuação 3)**
+- `geo-lift` → `geo-analytics` em toda a documentação do projeto; `mart_geo_lift` → `mart_geo_analytics`
+- `docs/roadmap.md` enxugado: fases 2/3 removidas; seção "Desenvolvimentos Futuros" aponta para `docs/backlog.md`
+- `docs/backlog.md` criado: 6 itens independentes (inferência causal, segmentação de municípios, agentes, fontes)
+- Backlog revisado pelo validador: PSM com seleção de pares completa, DiD via regressão `statsmodels`, Geo Lift (R) separado como passo independente, KNN movido para item próprio (Segmentação de Municípios)
+
+**Última etapa concluída:** Feature 5 — dbt Intermediate (fase 4a) — todos os modelos implementados e testados (Olist, IBGE, BCB PIX)
+**Em andamento:** Feature 6 — dbt Marts (fase 4a) — não iniciada; spec ainda não existe
+
+---
