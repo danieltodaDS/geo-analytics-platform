@@ -110,7 +110,7 @@ Staging espelha a fonte com dedup técnica e mecanismo de idempotência para car
 | Toda FK | `relationships` | ✅ |
 | Campos de status / categoria | `accepted_values` | ✅ |
 | Métricas numéricas | `expression_is_true (valor > 0)` | ✅ |
-| Volume mínimo | `dbt_utils.expression_is_true` ou Elementary | ✅ |
+| Volume mínimo | `dbt_utils.expression_is_true` | ✅ |
 
 ---
 
@@ -182,37 +182,6 @@ Regra: `description` obrigatório em toda coluna exposta no mart. Coluna sem des
 
 ---
 
-## Elementary — Monitoramento Automático
-
-Elementary detecta automaticamente anomalias não cobertas por testes estáticos.
-
-### Monitores a ativar
-
-| Monitor | Modelos | Threshold |
-|---|---|---|
-| Anomalia de volume | Todos os marts | ±30% da média histórica |
-| Schema change | Todos os marts | Qualquer remoção de coluna |
-| Freshness | Sources com SLA definido | Conforme tabela acima |
-
-### Configuração no dbt
-
-```yaml
-# packages.yml
-packages:
-  - package: elementary-data/elementary
-    version: [">=0.10.0", "<0.11.0"]
-```
-
-```yaml
-# dbt_project.yml
-models:
-  +meta:
-    elementary:
-      timestamp_column: "data_ingestao"
-```
-
----
-
 ## Testes Unitários — Ingestão Python
 
 Arquivo: `ingestion/tests/test_{fonte}.py`
@@ -240,10 +209,6 @@ dbt test
 ```
 
 Falha em qualquer step bloqueia o merge.
-
-### Alerta de freshness
-
-Elementary gera relatório de qualidade via `edr send-report`. Integrar com notificação no `ci.yml` após merge na `main`.
 
 ---
 

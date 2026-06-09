@@ -180,8 +180,9 @@
 **2026-06-09 (continuação 8)**
 - Validação pós-implementação de backlog/roadmap: 4 ressalvas resolvidas (nota de escopo v1 no item 1, desalinhamento temporal das covariáveis, matching com reposição documentado, k=5 definido no roadmap)
 - Nenhum código alterado — apenas documentação
+- Elementary removido do roadmap inteiro (sem dados atualizáveis, sem valor); movido para backlog item 7 (pós-v1); seção removida do data_quality.md; roadmap renumerado (17 itens)
 
 **Última etapa concluída:** Feature 6 — dbt Marts (fase 4a) — Produtizar — documentação pós-validação finalizada
-**Em andamento:** Feature 7 — Elementary (fase 4a) — não iniciada
+**Em andamento:** Feature 9 — Streamlit (fase 4a) — Explorar — não iniciada
 
 ---

@@ -223,24 +223,6 @@ Cobre Localidades e Censo 2022 — duas APIs distintas no mesmo domínio.
 
 ---
 
-#### Feature 7 — Qualidade com Elementary
-
-**Explorar**
-- Instalar Elementary e conectar ao BigQuery
-- Entender quais anomalias detecta automaticamente
-- Ver o dashboard gerado
-
-**Entender**
-- Definir quais monitores ativar por modelo
-- Definir thresholds de anomalia de volume
-
-**Produtizar**
-- Configurar Elementary no `packages.yml` do dbt
-- Ativar monitores de volume, freshness e schema
-- Integrar alerta no GitHub Actions
-
----
-
 #### Feature 8 — CI/CD GitHub Actions
 
 **Produtizar** (sem exploração necessária)
@@ -285,27 +267,25 @@ Documentação
 7.  Feature 4 — dbt Staging              (4a: dbt-duckdb)
 8.  Feature 5 — dbt Intermediate         (4a: dbt-duckdb)
 9.  Feature 6 — dbt Marts               (4a: dbt-duckdb)
-10. Feature 7 — Qualidade com Elementary (4a)
-11. Feature 9 — Streamlit                (4a: protótipo local contra DuckDB)
+10. Feature 9 — Streamlit                (4a: protótipo local contra DuckDB)
 
 --- Local B — dbt contra BigQuery ---
-12. Features 4–6                         (4b: migração de dialeto dbt-duckdb → dbt-bigquery)
-13. Feature 7 — Elementary               (4b: contra BigQuery)
-14. Feature 9 — Streamlit                (4b: Streamlit → BigQuery)
+11. Features 4–6                         (4b: migração de dialeto dbt-duckdb → dbt-bigquery)
+12. Feature 9 — Streamlit                (4b: Streamlit → BigQuery)
 
 --- Preparação para remoto ---
-15. Provisionamento GCP (one-time, via gcloud):
+13. Provisionamento GCP (one-time, via gcloud):
     - Bucket GCS para Parquet raw
     - Datasets BigQuery: dataset_raw, dbt_staging, dbt_intermediate, dbt_marts
     - Service account + Workload Identity Federation para GitHub Actions (ADR-009)
-16. Feature 8 — CI/CD GitHub Actions (ci.yml + ingest.yml)
+14. Feature 8 — CI/CD GitHub Actions (ci.yml + ingest.yml)
 
 --- Remoto — GCP em produção ---
-17. Features 1–7                         (4c: GitHub Actions + GCS + BigQuery)
-18. Feature 9 — Streamlit                (4c: deploy final)
+15. Features 1–6 + 8–9                   (4c: GitHub Actions + GCS + BigQuery)
+16. Feature 9 — Streamlit                (4c: deploy final)
 
 Documentação final
-19. Documentar prompts Claude Code usados
+17. Documentar prompts Claude Code usados
 ```
 
 ---

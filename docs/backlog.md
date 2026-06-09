@@ -301,6 +301,31 @@ Seguir o ciclo da v1: Explorar → Entender → `specs/ingestion/{fonte}.md` →
 
 ---
 
+## 7. Observabilidade com Elementary
+
+**Pré-requisito:** dados com atualização recorrente em produção (fase 4c). Elementary exige série histórica para detectar anomalias de volume — sem dados atualizáveis não há valor.
+
+**Objetivo:** monitoramento automático de anomalias não cobertas por testes estáticos: quedas de volume, mudanças de schema e freshness além do SLA.
+
+### Monitores planejados
+
+| Monitor | Modelos | Threshold |
+|---|---|---|
+| Anomalia de volume | Todos os marts | ±30% da média histórica |
+| Schema change | Todos os marts | Qualquer remoção de coluna |
+| Freshness | Sources com SLA definido | Conforme `data_quality.md` |
+
+### Como iniciar
+
+1. Instalar Elementary e conectar ao BigQuery (`packages.yml`)
+2. Explorar quais anomalias detecta automaticamente com dados reais
+3. Definir thresholds por modelo
+4. Integrar `edr send-report` no `ci.yml` após merge na `main`
+
+> Item 4 (Agente de Qualidade Narrativa) depende deste item — o agente consome alertas do Elementary.
+
+---
+
 ## 6. Fontes Adicionais de Negócio
 
 Segunda ou terceira fonte de negócio para ampliar o dataset de pedidos municipais e reduzir dependência do Olist.
