@@ -126,9 +126,9 @@ O padrão de path é o mesmo em todas as fases. O que muda é a raiz:
 | Fonte | Path relativo |
 |---|---|
 | IBGE Localidades | `ibge_localidades/year=X/month=X/day=X/data.parquet` |
-| IBGE Censo 9606 | `ibge_censo_9606/year=X/month=X/day=X/data.parquet` |
-| IBGE Censo 9605 | `ibge_censo_9605/year=X/month=X/day=X/data.parquet` |
-| IBGE Censo 9514 | `ibge_censo_9514/year=X/month=X/day=X/data.parquet` |
+| IBGE Censo 9514  | `ibge_censo_9514/year=X/month=X/day=X/data.parquet` |
+| IBGE Censo 10295 | `ibge_censo_10295/year=X/month=X/day=X/data.parquet` |
+| IBGE Censo 9936  | `ibge_censo_9936/year=X/month=X/day=X/data.parquet` |
 | BCB PIX | `bcb_pix/year=X/month=X/day=X/data.parquet` |
 | Olist | `olist/year=X/month=X/day=X/data.parquet` |
 

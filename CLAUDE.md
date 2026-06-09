@@ -46,7 +46,7 @@ Leia o documento correspondente **antes** de agir — não depois.
 
 - `docs/roadmap.md` — ao iniciar trabalho em qualquer feature nova ou fase nova
 - `docs/normative/conventions.md` — ao criar qualquer arquivo Python, modelo dbt, coluna, dataset ou variável de ambiente
-- `docs/normative/data_quality.md` — ao escrever qualquer modelo dbt, teste ou sources.yml
+- `docs/normative/data_quality.md` — ao escrever qualquer modelo dbt, teste, sources.yml ou script de ingestão
 - `docs/adr/` — ao implementar ou modificar componente coberto por uma ADR, leia a ADR antes de escrever código:
   - Scripts de ingestão e raw layer → ADR-003, ADR-005
   - Orquestração local / Makefile → ADR-006
