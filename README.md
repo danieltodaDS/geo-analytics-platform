@@ -142,7 +142,7 @@ Após Local B validado e Terraform provisionado.
 - BCB PIX — volume e quantidade de transações PIX por município (a partir de 2020)
 
 **Output:**
-- `mart_geo_lift` — unidade municipal com métricas de negócio + covariáveis, pronto para o modelo causal da Fase 2
+- `mart_geo_analytics` — unidade municipal com métricas de negócio + covariáveis, pronto para o modelo causal da Fase 2
 
 ---
 

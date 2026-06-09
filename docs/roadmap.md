@@ -12,7 +12,7 @@
 Fase 1 — v1 (foco atual)
 Analytics Engineering completo — local + remoto em produção
 Fontes: Olist + IBGE Localidades + Censo 2022 + BCB PIX
-Mart: mart_geo_lift pronto para o modelo causal
+Mart: mart_geo_analytics pronto para o modelo causal
 
 Fase 2 — v2
 Data Science (matching + DiD) + enriquecimento de fontes + agentes
@@ -36,7 +36,7 @@ Itens exploratórios e de baixa prioridade
 - IBGE Localidades — municípios, estados, regiões via servicodados.ibge.gov.br
 
 **Mart (1):**
-- `mart_geo_lift` — unidade municipal, métricas de negócio + covariáveis prontas para o modelo causal
+- `mart_geo_analytics` — unidade municipal, métricas de negócio + covariáveis prontas para o modelo causal
 
 ---
 
@@ -225,7 +225,7 @@ Cobre Localidades e Censo 2022 — duas APIs distintas no mesmo domínio.
 
 **Produtizar**
 - `mart_municipios.sql` — perfil completo por município
-- `mart_geo_lift.sql` — dataset final com métricas + covariáveis
+- `mart_geo_analytics.sql` — dataset final com métricas + covariáveis
 - `schema.yml` — suite completa de testes + descrições de colunas + owner
 
 ---
@@ -324,7 +324,7 @@ v1 em produção — local + remoto funcionando de ponta a ponta.
 ### Escopo da v2
 
 **Data Science — modelo causal:**
-Usar o `mart_geo_lift` da v1 para medir o impacto causal da expansão do produto.
+Usar o `mart_geo_analytics` da v1 para medir o impacto causal da expansão do produto.
 
 **Enriquecimento de fontes:**
 - CAGED (Base dos Dados) — movimentações mensais de emprego formal por município
@@ -440,7 +440,7 @@ lift = tratamento_delta - controle_delta
 O mais diferenciado do projeto — não tem equivalente em ferramentas consolidadas.
 
 ```
-mart_geo_lift disponível no BigQuery
+mart_geo_analytics disponível no BigQuery
        ↓
 Agente lê os resultados
        ↓
@@ -511,7 +511,7 @@ Agente reporta:
 
 ```
 Explorar
-└── Inspecionar mart_geo_lift
+└── Inspecionar mart_geo_analytics
 └── Testar diferentes datas de corte
 └── Verificar balanceamento inicial dos grupos
 └── Explorar CAGED e RAIS via Base dos Dados

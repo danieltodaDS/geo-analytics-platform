@@ -159,11 +159,11 @@ Obrigatório em **staging** e **marts**. Opcional em intermediate.
 
 ```yaml
 models:
-  - name: mart_geo_lift
-    description: "Dataset principal para o experimento causal de Geo Lift."
+  - name: mart_geo_analytics
+    description: "Dataset principal para inferência causal — geo lift, DiD e outras técnicas."
     meta:
       owner: daniel
-    tags: [marts, geo_lift]
+    tags: [marts, geo_analytics]
 ```
 
 ### Por coluna

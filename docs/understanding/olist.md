@@ -135,7 +135,7 @@ Nulos em `orders` são esperados: pedidos cancelados, em processamento ou não e
 | `unavailable` | 609 |
 | outros | 622 |
 
-Para o mart_geo_lift, usar apenas pedidos com `order_status = 'delivered'` — são os únicos com transação efetivamente concluída.
+Para o mart_geo_analytics, usar apenas pedidos com `order_status = 'delivered'` — são os únicos com transação efetivamente concluída.
 
 ---
 

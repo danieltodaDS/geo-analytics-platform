@@ -15,7 +15,7 @@ A v1 usa o Olist (Kaggle) como única fonte de negócio. A decisão é: o pipeli
 
 ## Justificativa
 
-- O problema de negócio é genérico — medir causalidade em expansão geográfica de produto digital. Amarrar a plataforma ao Olist reduz o argumento de portfólio a "análise do Olist", não a "plataforma de Geo Lift"
+- O problema de negócio é genérico — medir causalidade em expansão geográfica de produto digital. Amarrar a plataforma ao Olist reduz o argumento de portfólio a "análise do Olist", não a "plataforma de Geo Analytics"
 - Qualquer fonte histórica com `(municipio_id, data, valor)` pode alimentar o experimento — a abstração tem custo baixo e benefício alto
 - A separação explícita entre fontes de negócio e covariáveis municipais é a decisão arquitetural central do projeto: covariáveis descrevem o contexto, fontes de negócio descrevem o que medir
 

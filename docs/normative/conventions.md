@@ -75,7 +75,7 @@ mart_{entidade_de_negocio}
 ```
 
 Exemplos:
-- `mart_geo_lift` — dataset principal para o experimento causal
+- `mart_geo_analytics` — dataset principal para o experimento causal
 - `mart_municipios` — perfil completo por município
 
 ---

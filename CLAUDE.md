@@ -1,5 +1,5 @@
 ## Sobre o projeto
-Pipeline de Analytics Engineering para Geo Lift
+Pipeline de Analytics Engineering para Geo Analytics
 usando dados públicos brasileiros no GCP.
 
 ## Ciclo de desenvolvimento
