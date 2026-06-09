@@ -10,6 +10,8 @@
 
 **Objetivo:** medir o impacto de uma campanha de expansão geográfica com maior robustez, comparando múltiplas técnicas. A campanha pode ser real (data de entrada do produto por município) ou simulada com dados sintéticos quando não há evento real disponível.
 
+> **Escopo na v1:** o Mahalanobis matching (etapa 1 da progressão abaixo) foi antecipado para a v1 como funcionalidade do Streamlit (Feature 9 do roadmap). DiD, PSM e Geo Lift permanecem como pós-v1.
+
 ### Por que não A/B Test simples
 
 Comparações ingênuas introduzem três vieses:
@@ -59,6 +61,8 @@ Convergência entre Mahalanobis+DiD e PSM+DiD é evidência de robustez da sele�
 
 Correlações entre as 6 variáveis são todas baixas (|r| < 0.21) — sem redundância relevante. `avg_dias_entrega` foi descartada por correlação moderada com `pct_domicilios_com_internet` (-0.20) em favor de `pct_pagamento_cartao`, que captura uma dimensão independente.
 
+> **Desalinhamento temporal:** `penetracao_olist`, `ticket_medio` e `pct_pagamento_cartao` são de 2018 (Olist); `renda_media_per_capita` e `pct_domicilios_com_internet` são de 2022 (Censo); `populacao_residente` é de 2022. O matching usa variáveis de períodos distintos como proxy do perfil estrutural do município — limitação herdada das fontes disponíveis, declarada em `docs/understanding/mart_geo_analytics.md`.
+
 > Covariáveis adicionais do item 5 (CAGED, Anatel SCM) podem enriquecer o matching em versões futuras.
 
 ### Esboço de implementação — Matching por Mahalanobis
@@ -81,7 +85,8 @@ VI = np.linalg.inv(np.cov(df[features].T))
 
 distancias = cdist(df_trat, df_ctrl, metric='mahalanobis', VI=VI)
 
-# Para cada tratado: índice do controle mais próximo
+# Matching com reposição: um controle pode ser par de múltiplos tratados.
+# Para DiD, ponderar controles pareados múltiplas vezes pelo número de usos.
 indices_ctrl = distancias.argmin(axis=1)
 
 df_matched = pd.concat([

@@ -264,7 +264,7 @@ Cobre Localidades e Censo 2022 — duas APIs distintas no mesmo domínio.
 **Produtizar**
 - Mapa de municípios com covariáveis (Plotly)
 - Distribuição de métricas por região e fonte de negócio
-- **Matching por Mahalanobis:** dado um município tratado, retorna os k mais similares como candidatos a controle — usando as 6 covariáveis fixadas no `docs/backlog.md` item 1; implementação via `scipy.cdist`
+- **Matching por Mahalanobis:** dado um município tratado, retorna os k=5 mais similares como candidatos a controle — usando as 6 covariáveis fixadas no `docs/backlog.md` item 1; implementação via `scipy.cdist`; k configurável via widget no Streamlit
 
 > Escopo deliberado: apenas a seleção de pares (matching). DiD, PSM e Geo Lift permanecem no backlog item 1 como pós-v1.
 
