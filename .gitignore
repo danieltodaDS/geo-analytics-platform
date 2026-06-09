@@ -16,6 +16,7 @@ wheels/
 dbt/profiles.yml
 dbt/.user.yml
 dbt/geo_analytics.duckdb
+geo_analytics.duckdb
 dbt/target/
 dbt/logs/
 logs/
