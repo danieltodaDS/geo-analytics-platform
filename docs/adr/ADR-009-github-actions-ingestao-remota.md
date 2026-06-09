@@ -41,7 +41,7 @@ Com esse perfil de carga, o problema a resolver não é "agendamento confiável"
 
 ## Consequências
 
-- Terraform deixa de ser necessário para a v1 — BigQuery dataset e bucket GCS são provisionados uma única vez via `gcloud` (ver comandos em `docs/conventions.md`)
+- Terraform deixa de ser necessário para a v1 — BigQuery dataset e bucket GCS são provisionados uma única vez via `gcloud` (comandos documentados na spec da Feature 8)
 - A fase "Remoto" do roadmap é reduzida: sem `deploy.yml` de build/push de imagem, apenas `ingest.yml` com `workflow_dispatch`
 - O `ingest.yml` cobre o pipeline completo: `uv run python ingest.py` → Parquet em GCS → `bq load` no dataset raw do BigQuery
 - dbt na fase remota roda via dbt-core em GitHub Actions (step `dbt run --target prod`) ou dbt Cloud — ambos válidos; dbt Cloud opcional para portfólio

@@ -281,7 +281,7 @@ Cobre Localidades e Censo 2022 — duas APIs distintas no mesmo domínio.
 Documentação
 1. README + escopo
 2. ADRs
-3. docs/conventions.md + docs/sources.md + docs/data_quality.md
+3. docs/normative/conventions.md + docs/normative/data_quality.md
 
 --- Local A — sem dependência de cloud ---
 4.  Feature 1 — Ingestão Olist           (4a: Parquet local)

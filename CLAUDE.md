@@ -10,6 +10,20 @@ A produtização segue três fases progressivas — nunca pule etapas:
   4c. Remoto  — GitHub Actions + GCS + BigQuery em produção (ADR-009)
 Antes de gerar código de produção, leia a spec correspondente em /specs.
 
+## Arquitetura de contexto
+Cada etapa do ciclo produz artefatos específicos que alimentam a próxima:
+
+  Explorar    → exploration/         (notebooks — gitignored, só local)
+  Entender    → docs/understanding/  (schema real verificado, anomalias, decisões de fonte)
+  Especificar → specs/               (contrato de implementação — lido antes do código)
+  Produtizar  → código + testes
+
+Transversais ao ciclo — lidos conforme gatilhos em "Documentos normativos":
+  docs/adr/           — decisões arquiteturais (por que, não o quê)
+  docs/normative/     — regras obrigatórias (conventions, data_quality)
+  docs/roadmap.md     — escopo, sequência de construção e fases futuras
+  docs/session_log.md — estado atual e próximo passo
+
 ## Stack
 Python 3.11, dbt Core, BigQuery, GCS, Streamlit, GitHub Actions
 
@@ -45,6 +59,8 @@ Leia o documento correspondente **antes** de agir — não depois.
 - `docs/normative/data_quality.md` — ao escrever qualquer modelo dbt, teste ou sources.yml
 - `docs/adr/` — ao implementar ou modificar componente coberto por uma ADR, leia a ADR antes de escrever código:
   - Scripts de ingestão e raw layer → ADR-003, ADR-005
+  - Orquestração local / Makefile → ADR-006
+  - dbt local (dbt-duckdb, fase 4a) → ADR-007
   - dbt staging → ADR-008
   - Fase remota / CI/CD → ADR-009
   - Warehouse → ADR-001
