@@ -22,12 +22,13 @@ Comparações ingênuas introduzem três vieses:
 
 | Técnica | Biblioteca | O que resolve |
 |---|---|---|
-| Diferença em Diferenças (DiD) | `statsmodels`, `linearmodels` | Viés temporal + grupo de controle não matching |
+| Diferença em Diferenças (DiD) | `statsmodels`, `linearmodels` | Viés temporal + estimativa de impacto |
 | Propensity Score Matching | `sklearn` | Viés de seleção via probabilidade de tratamento |
-| KNN Matching | `sklearn` | Viés de seleção via vizinhos mais próximos |
-| Geo Lift | pacote R `GeoLift` | Combinação de matching + DiD + teste de permutação |
+| Geo Lift | pacote R `GeoLift` | Matching + DiD + teste de permutação integrados |
 
 Avaliar robustez comparando resultados entre técnicas. Convergência entre métodos é evidência mais forte do que um único resultado.
+
+> **Nota:** Geo Lift requer ambiente R separado (`renv` ou equivalente). As demais técnicas são Python puro.
 
 ### Covariáveis de matching
 
@@ -42,24 +43,32 @@ O Nível 2 é o mais importante — comportamento passado é o preditor mais for
 ### Esboço de implementação — Matching
 
 ```python
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.neighbors import NearestNeighbors
 from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import NearestNeighbors
 
 features = ['populacao', 'renda_per_capita', 'pct_internet',
             'volume_pix', 'volume_pedidos_pre', 'ticket_medio_pre']
 
 X = StandardScaler().fit_transform(df[features])
 
-# KNN
-nn = NearestNeighbors(n_neighbors=1)
-nn.fit(X[df.grupo == 'controle'])
-distances, indices = nn.kneighbors(X[df.grupo == 'tratamento'])
-
-# Propensity Score
+# 1. Calcular propensity score
 lr = LogisticRegression()
 lr.fit(X, df['grupo_binario'])
 df['propensity_score'] = lr.predict_proba(X)[:, 1]
+
+# 2. Parear cada tratado com o controle de score mais próximo (1D)
+ps_trat = df.loc[df.grupo == 'tratamento', 'propensity_score'].values.reshape(-1, 1)
+ps_ctrl = df.loc[df.grupo == 'controle',   'propensity_score'].values.reshape(-1, 1)
+
+nn = NearestNeighbors(n_neighbors=1).fit(ps_ctrl)
+_, indices = nn.kneighbors(ps_trat)
+
+df_matched = pd.concat([
+    df[df.grupo == 'tratamento'],
+    df[df.grupo == 'controle'].iloc[indices.flatten()]
+])
 ```
 
 Critério de seleção: SMD < 0.1 em todas as covariáveis após matching.
@@ -67,19 +76,24 @@ Critério de seleção: SMD < 0.1 em todas as covariáveis após matching.
 ### Esboço de implementação — DiD
 
 ```python
-tratamento_delta = (
-    df[df.grupo=='tratamento']['metrica_pos'].mean() -
-    df[df.grupo=='tratamento']['metrica_pre'].mean()
-)
-controle_delta = (
-    df[df.grupo=='controle']['metrica_pos'].mean() -
-    df[df.grupo=='controle']['metrica_pre'].mean()
-)
-lift = tratamento_delta - controle_delta
+import statsmodels.formula.api as smf
+
+# Formato longo: uma linha por (municipio, periodo)
+# periodo_pos: 0 = pré, 1 = pós | tratamento: 0 = controle, 1 = tratado
+# tratamento_pos: termo de interação — coeficiente é o lift causal
+
+modelo = smf.ols(
+    'metrica ~ tratamento + periodo_pos + tratamento:periodo_pos',
+    data=df
+).fit()
+
+lift    = modelo.params['tratamento:periodo_pos']
+p_value = modelo.pvalues['tratamento:periodo_pos']
+ic_95   = modelo.conf_int().loc['tratamento:periodo_pos']
 ```
 
 Validação obrigatória: tendências paralelas no pré-período.
-Teste de significância: bootstrap ou teste t.
+Aplicar sobre `df_matched` após Propensity Score Matching para estimativa ajustada.
 
 ### Dados sintéticos
 
@@ -90,11 +104,46 @@ Se não houver campanha real, simular tratamento com atribuição aleatória est
 1. Explorar: inspecionar `mart_geo_analytics`, verificar cobertura temporal e distribuição de covariáveis
 2. Definir grupos (tratamento/controle) — por data de entrada do produto ou atribuição sintética
 3. Especificar → `specs/ds/inferencia_causal.md`
-4. Implementar e comparar técnicas; documentar qual produz melhor balanceamento
+4. Sequência sugerida (Python):
+   - DiD simples sem matching — baseline; valida tendências paralelas e produz estimativa inicial
+   - Propensity Score Matching → selecionar pares → reaplicar DiD sobre `df_matched`
+   - Comparar os dois resultados: a diferença indica o grau de viés de seleção
+5. Geo Lift (R) como contraste independente — montar ambiente R separado (`renv`); rodar após as técnicas Python para validação cruzada dos resultados
+
+> Covariáveis adicionais do item 4 (CAGED, Anatel SCM) enriquecem o matching — quanto mais rico o Nível 1, mais preciso o pareamento.
 
 ---
 
-## 2. Agente de Análise
+## 2. Segmentação de Municípios
+
+**Objetivo:** descobrir agrupamentos naturais de municípios com base em covariáveis socioeconômicas e de comportamento de e-commerce, sem label predefinida.
+
+Casos de uso:
+- Segmentação estratégica: identificar perfis recorrentes ("urbanos digitais", "rurais de baixa conectividade") para orientar expansão
+- Benchmarking: comparar desempenho de um município dentro do seu segmento natural
+- Análise exploratória: entender a heterogeneidade do território antes de modelar
+- Insumo para inferência causal (item 1): segmentos como estrato para matching
+
+### Algoritmos a explorar
+
+| Algoritmo | Biblioteca | Característica |
+|---|---|---|
+| K-Means | `sklearn` | Segmentos com centróides interpretáveis; requer definir k |
+| Hierarchical Clustering | `sklearn` | Dendrогrama — não precisa definir k a priori |
+| DBSCAN | `sklearn` | Detecta outliers; bom para municípios atípicos |
+
+KNN como ferramenta auxiliar de consulta ad hoc: dado um município específico, retorna os k mais similares para benchmarking pontual.
+
+### Como iniciar
+
+1. Definir quais covariáveis compõem o perfil municipal (Nível 1 do item 1 como base)
+2. Explorar distribuição e escala das features — normalização obrigatória antes de qualquer algoritmo de distância
+3. Experimentar K-Means com diferentes valores de k; avaliar coesão dos clusters (silhouette score)
+4. Especificar → `specs/ds/segmentacao_municipios.md`
+
+---
+
+## 3. Agente de Análise
 
 **Objetivo:** agente Claude que lê `mart_geo_analytics`, roda análise estatística via tool use e gera relatório interpretado em linguagem natural.
 
@@ -157,7 +206,7 @@ def agente_analise(resultados: dict):
 
 ---
 
-## 3. Agente de Qualidade Narrativa
+## 4. Agente de Qualidade Narrativa
 
 **Objetivo:** complementa o Elementary — investiga contexto de anomalias detectadas e gera explicação em linguagem natural.
 
@@ -185,7 +234,7 @@ Agente reporta:
 
 ---
 
-## 4. Fontes Adicionais de Covariáveis
+## 5. Fontes Adicionais de Covariáveis
 
 Candidatas por relevância para matching causal — priorizar por relevância e facilidade de acesso:
 
@@ -206,7 +255,7 @@ Seguir o ciclo da v1: Explorar → Entender → `specs/ingestion/{fonte}.md` →
 
 ---
 
-## 5. Fontes Adicionais de Negócio
+## 6. Fontes Adicionais de Negócio
 
 Segunda ou terceira fonte de negócio para ampliar o dataset de pedidos municipais e reduzir dependência do Olist.
 
@@ -220,8 +269,3 @@ Critérios mínimos: granularidade municipal, período mínimo de 12 meses, stat
 
 Seguir Feature 1 do `roadmap.md` como template — o pipeline já está desenhado para receber novas fontes de negócio plugáveis (ADR-005).
 
----
-
-## 6. LangGraph
-
-Substituir ou complementar os agentes acima com fluxos multi-step mais complexos usando LangGraph. Avaliar após os agentes de análise e qualidade narrativa estarem em produção e os fluxos lineares mostrarem limitação.
