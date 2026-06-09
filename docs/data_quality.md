@@ -12,7 +12,62 @@
 
 ---
 
-## Critérios de Promoção entre Camadas
+## Contrato entre Camadas
+
+Cada camada tem responsabilidades fixas. O que entra, o que muda e o que não muda é determinístico.
+
+### Raw Layer — GCS / `data/raw/`
+
+```
+O que chega:    Dado bruto, exatamente como veio da fonte
+Formato:        Parquet (JSONL como fallback para schemas variáveis)
+Transformação:  Nenhuma — nem renomeação de coluna
+Imutabilidade:  Nunca sobrescrito — só append
+Responsável:    Script de ingestão + validação Pydantic
+```
+
+### dataset_raw — BigQuery
+
+```
+O que chega:    Carga direta do GCS, sem transformação
+Transformação:  Nenhuma — só materialização no warehouse
+Granularidade:  Idêntica ao Parquet raw
+Responsável:    bq load (local) ou ingest.yml (remoto)
+```
+
+### dataset_staging — BigQuery (dbt)
+
+```
+O que chega:    Dado do dataset_raw
+O que muda:     Limpeza de tipos, renomeação para snake_case,
+                dedup técnica (row_hash), cast de datas
+O que NÃO muda: Granularidade — 1 linha raw = 1 linha staging
+                Regras de negócio — nenhuma nesta camada
+Responsável:    dbt staging models
+```
+
+### dataset_intermediate — BigQuery (dbt)
+
+```
+O que chega:    Modelos de staging (uma ou mais fontes)
+O que muda:     Joins, agregações, regras de negócio,
+                granularidade pode mudar (ex: linha por município/mês)
+                Dedup semântica quando necessário
+Responsável:    dbt intermediate models
+```
+
+### dataset_marts — BigQuery (dbt)
+
+```
+O que chega:    Modelos intermediate
+O que muda:     Seleção e exposição das colunas finais, métricas derivadas
+Regras:         Prontos para consumo — sem joins adicionais necessários
+Documentação:   description + owner + tags obrigatórios em toda coluna
+Responsável:    dbt mart models
+Consumidores:   Streamlit, Fase 2 (DS), Fase 3 (Agentes)
+```
+
+### Critérios de Promoção
 
 | Transição | Critério |
 |---|---|
@@ -182,7 +237,6 @@ Obrigatório por script de ingestão:
 pytest ingestion/tests/
 dbt compile
 dbt test
-terraform plan
 ```
 
 Falha em qualquer step bloqueia o merge.
