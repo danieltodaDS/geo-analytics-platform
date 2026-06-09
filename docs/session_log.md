@@ -128,8 +128,51 @@
 - `docs/roadmap.md` enxugado: fases 2/3 removidas; seção "Desenvolvimentos Futuros" aponta para `docs/backlog.md`
 - `docs/backlog.md` criado: 6 itens independentes (inferência causal, segmentação de municípios, agentes, fontes)
 - Backlog revisado pelo validador: PSM com seleção de pares completa, DiD via regressão `statsmodels`, Geo Lift (R) separado como passo independente, KNN movido para item próprio (Segmentação de Municípios)
+- `CLAUDE.md` atualizado: formato de "Em andamento" no session_log agora inclui etapa do ciclo (Explorar/Entender/Especificar/Produtizar)
+- `exploration/intermediate_exploration.ipynb` criado: 11 tabelas, joins entre domínios, queries de cobertura
 
 **Última etapa concluída:** Feature 5 — dbt Intermediate (fase 4a) — todos os modelos implementados e testados (Olist, IBGE, BCB PIX)
-**Em andamento:** Feature 6 — dbt Marts (fase 4a) — não iniciada; spec ainda não existe
+**Em andamento:** Feature 6 — dbt Marts (fase 4a) — Explorar — notebook intermediate_exploration.ipynb criado, exploração não executada
+
+---
+
+**2026-06-09 (continuação 4)**
+- `docs/understanding/intermediate.md` criado: volumes reais 11 tabelas, schemas corrigidos vs spec, distribuições, coberturas geo/IBGE/PIX
+- Anomalias documentadas: coluna `items_count` (spec dizia `total_items`), `review_score IS NOT NULL` no lugar de `has_review`, int_ibge_municipios já contém covariáveis (JOIN com int_ibge_censo_covariaveis desnecessário no mart)
+- Cobertura cross-domain: 2.361/5.571 municípios IBGE com pedidos Olist (42,4%); PIX × IBGE 100%; covariáveis 99,98%
+
+**Última etapa concluída:** Feature 6 — dbt Marts (fase 4a) — Entender — docs/understanding/intermediate.md criado
+**Em andamento:** Feature 6 — dbt Marts (fase 4a) — Especificar — spec ainda não existe
+
+---
+
+**2026-06-09 (continuação 5)**
+- `docs/understanding/mart_geo_analytics.md` revisado pelo Validador e consolidado: contradição order_status resolvida, cobertura quantificada em pedidos, join type=INNER definido, agregação temporal=2018, PIX pagador+recebedor ambos incluídos; design de 3 marts e métricas sugeridas
+- Macro `normalize_city_name` criada: remove acentos + snake_case; colunas `_slug` adicionadas a int_ibge_municipios, int_olist_geolocation, int_dim_sellers, int_dim_customers
+- Cobertura pedidos→município: 53% (lower only) → 99,2% com slug; 4.009 municípios distintos; 19/19 testes passando
+- Unique test nome_municipio_slug: composto (slug + uf_sigla) — municípios homônimos em estados distintos
+
+**Última etapa concluída:** Feature 6 — dbt Marts (fase 4a) — Entender — understanding finalizado, slug implementado no intermediate
+**Em andamento:** Feature 6 — dbt Marts (fase 4a) — Especificar — specs/dbt/marts.md criada, aguarda validação
+
+---
+
+**2026-06-09 (continuação 6)**
+- `specs/dbt/marts.md` criada: 3 modelos especificados (mart_olist, mart_ibge_pix, mart_geo_analytics)
+- Spec revisada pelo Validador (8 pontos) e corrigida: FILTER→CASE WHEN, volume mínimo removido, MAX() para IBGE, fonte autoritativa de dimensões declarada, atemporalidade de vendedores_no_municipio declarada, INNER JOIN corrigido, tabela de colunas herdadas, testes de negócio completos
+
+**Última etapa concluída:** Feature 6 — dbt Marts (fase 4a) — Especificar — specs/dbt/marts.md aprovada
+**Em andamento:** Feature 6 — dbt Marts (fase 4a) — Produtizar — não iniciada
+
+---
+
+**2026-06-09 (continuação 7)**
+- 3 marts implementados: `mart_olist` (id_municipio, ano), `mart_ibge_pix` (id_municipio, ano), `mart_geo_analytics` (id_municipio)
+- `_marts.yml` criado: description em toda coluna exposta, suite completa de testes
+- 42/42 testes passando (expression_is_true, unique, not_null, relationships, unique_combination_of_columns)
+- Macro `normalize_city_name` e colunas `_slug` do intermediate usadas para join ZIP → município IBGE
+
+**Última etapa concluída:** Feature 6 — dbt Marts (fase 4a) — Produtizar — pós-validação: 4 ressalvas resolvidas, 46/46 testes passando
+**Em andamento:** — Feature 6 concluída; próximo passo a definir (fase 4b ou Streamlit protótipo)
 
 ---
