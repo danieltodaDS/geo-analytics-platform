@@ -6,6 +6,9 @@ models:
     columns:
       - name: geolocation_zip_code_prefix
         data_tests: [not_null, unique]
+      - name: geolocation_city_slug
+        description: Nome da cidade normalizado (sem acentos, snake_case) — chave de join com int_ibge_municipios.nome_municipio_slug.
+        data_tests: [not_null]
 
   - name: int_olist_order_payments_agg
     description: Pagamentos pivotados por tipo de pagamento, no grão order.
@@ -50,12 +53,18 @@ models:
     columns:
       - name: customer_unique_id
         data_tests: [not_null, unique]
+      - name: customer_city_slug
+        description: Nome da cidade normalizado (sem acentos, snake_case) — chave de join com int_ibge_municipios.nome_municipio_slug.
+        data_tests: [not_null]
 
   - name: int_dim_sellers
     description: Dimensão de vendedores enriquecida com lat/lng via CEP. Consumida no mart.
     columns:
       - name: seller_id
         data_tests: [not_null, unique]
+      - name: seller_city_slug
+        description: Nome da cidade normalizado (sem acentos, snake_case) — chave de join com int_ibge_municipios.nome_municipio_slug.
+        data_tests: [not_null]
 
   - name: int_dim_products
     description: Dimensão de produtos com product_volume_cm3 derivado. Consumida no mart.
@@ -87,10 +96,17 @@ models:
 
   - name: int_ibge_municipios
     description: Dimensão de municípios — hierarquia geográfica (UF, macrorregião) + covariáveis do Censo 2022. Consumida no mart.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [nome_municipio_slug, uf_sigla]
     columns:
       - name: id_municipio
         data_tests: [not_null, unique]
       - name: nome_municipio
+        data_tests: [not_null]
+      - name: nome_municipio_slug
+        description: Nome do município normalizado (sem acentos, snake_case) — chave de join com colunas _slug das tabelas Olist. Único por (slug, uf_sigla).
         data_tests: [not_null]
       - name: uf_sigla
         data_tests: [not_null]

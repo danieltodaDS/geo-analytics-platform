@@ -9,6 +9,7 @@ covariaveis as (
 select
     localidades.id_municipio,
     localidades.nome_municipio,
+    {{ normalize_city_name('localidades.nome_municipio') }} as nome_municipio_slug,
     localidades.uf_sigla,
     localidades.uf_nome,
     localidades.macroregiao_sigla,

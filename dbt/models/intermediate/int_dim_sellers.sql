@@ -15,6 +15,7 @@ select
     s.seller_zip_code_prefix,
     s.seller_state,
     s.seller_city,
+    {{ normalize_city_name('s.seller_city') }} as seller_city_slug,
     g.geolocation_lat  as seller_lat,
     g.geolocation_lng  as seller_lng
 from sellers s

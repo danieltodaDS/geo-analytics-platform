@@ -18,5 +18,6 @@ select
     geolocation_lat,
     geolocation_lng,
     geolocation_city,
+    {{ normalize_city_name('geolocation_city') }} as geolocation_city_slug,
     geolocation_state
 from centroide

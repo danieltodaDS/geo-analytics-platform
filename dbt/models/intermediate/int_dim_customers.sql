@@ -25,6 +25,7 @@ select
     c.customer_zip_code_prefix,
     c.customer_state,
     c.customer_city,
+    {{ normalize_city_name('c.customer_city') }} as customer_city_slug,
     g.geolocation_lat  as customer_lat,
     g.geolocation_lng  as customer_lng
 from canonical c
