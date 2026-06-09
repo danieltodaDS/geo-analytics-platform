@@ -149,7 +149,8 @@ Regras:
 
 ### Classes Pydantic
 
-- PascalCase com sufixo `Raw` para models de validação de ingestão: `MunicipioRaw`, `SidraRegistroRaw`, `PixTransacaoRaw`
+- Obrigatório em toda ingestão — toda resposta de API ou leitura de arquivo externo passa por um model Pydantic antes de ser gravada
+- PascalCase com sufixo `Raw`: `MunicipioRaw`, `SidraRegistroRaw`, `PixTransacaoRaw`
 
 ### Funções
 
@@ -157,10 +158,16 @@ Regras:
 - Funções internas (não exportadas): prefixo `_`
 - Funções de fetch HTTP: sempre decoradas com Tenacity
 
+### Logging
+
+- Obrigatório: `structlog` em todos os scripts de ingestão — nunca `print()` ou `logging` padrão
+- Nível mínimo: `INFO` para operações normais, `WARNING` para dados fora do esperado (ex: volume abaixo do threshold), `ERROR` para falhas que encerram o script
+
 ### Variáveis de ambiente
 
 - UPPER_SNAKE_CASE: `GCS_BUCKET`, `KAGGLE_USERNAME`, `KAGGLE_KEY`
 - Nunca hard-codar — sempre via `os.environ` ou `os.getenv`
+- Credenciais nunca entram em código, logs ou mensagens de commit
 
 ---
 

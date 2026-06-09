@@ -36,20 +36,10 @@ Python 3.11, dbt Core, BigQuery, GCS, Streamlit, GitHub Actions
 - Sincronizar ambiente: `uv sync`
 - **Nunca usar `pip install` diretamente** — sempre `uv add`
 
-## Convenções obrigatórias
-- Pydantic para validação de schema em toda ingestão
-- Tenacity para retry em toda chamada de API
-- Logging estruturado com structlog
-- Nunca hardcodar credenciais — usar variáveis de ambiente
-- Commits semânticos e atômicos — um commit por unidade lógica de trabalho (ex: um arquivo, uma decisão, uma etapa do ciclo). Nunca agrupar etapas distintas do ciclo Explorar/Entender/Especificar/Produtizar em um único commit.
-
-## Testes obrigatórios
-- Staging: not_null nos identificadores mínimos; unique NÃO testado em PKs naturais da fonte; unique testado em surrogates construídos pelo pipeline (ADR-008)
-- Staging: dedup técnica obrigatória via QUALIFY ROW_NUMBER() OVER (PARTITION BY <colunas não-técnicas>) = 1
-- Intermediate: not_null + unique em toda PK, relationships em toda FK, accepted_values em booleanos/status, expression_is_true (valor > 0) em métricas numéricas
-- Marts: todos os testes de intermediate + volume mínimo via dbt_utils ou Elementary
-- Toda coluna exposta em mart deve ter `description` no schema.yml — coluna sem descrição = modelo incompleto
-- Teste unitário cobrindo edge cases da spec
+## Restrições críticas
+- Nunca hardcodar credenciais — variáveis de ambiente obrigatórias; credenciais não entram em código, logs ou commits
+- Commits atômicos — um commit por unidade lógica; nunca agrupar etapas distintas do ciclo Explorar/Entender/Especificar/Produtizar
+- Regras completas: `docs/normative/conventions.md` e `docs/normative/data_quality.md`
 
 ## Documentos normativos
 Leia o documento correspondente **antes** de agir — não depois.
