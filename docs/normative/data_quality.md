@@ -64,7 +64,7 @@ O que muda:     Seleção e exposição das colunas finais, métricas derivadas
 Regras:         Prontos para consumo — sem joins adicionais necessários
 Documentação:   description + owner + tags obrigatórios em toda coluna
 Responsável:    dbt mart models
-Consumidores:   Streamlit, Fase 2 (DS), Fase 3 (Agentes)
+Consumidores:   Streamlit, backlog (DS, Agentes)
 ```
 
 ### Critérios de Promoção
