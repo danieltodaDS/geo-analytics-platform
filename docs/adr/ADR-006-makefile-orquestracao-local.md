@@ -40,7 +40,7 @@ test:
 	cd dbt && uv run dbt test --profiles-dir .
 
 streamlit:
-	uv run streamlit run app/dashboard.py
+	uv run streamlit run streamlit/app.py
 ```
 
 ## Justificativa
