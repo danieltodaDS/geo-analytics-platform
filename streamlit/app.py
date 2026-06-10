@@ -6,7 +6,9 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from scipy.spatial.distance import cdist
 
-DB_PATH = "dbt/geo_analytics.duckdb"
+from pathlib import Path
+
+DB_PATH = Path(__file__).parent.parent / "dbt" / "geo_analytics.duckdb"
 
 FEATURES = [
     "populacao_residente",
@@ -58,7 +60,7 @@ def get_top_matches(
     X: np.ndarray,
     VI: np.ndarray,
     k: int = 5,
-) -> tuple[pd.DataFrame, float]:
+) -> pd.DataFrame:
     pos = df_match.index[df_match["id_municipio"] == municipio_id][0]
     x_trat = X[pos].reshape(1, -1)
     distancias = cdist(x_trat, X, metric="mahalanobis", VI=VI).flatten()
@@ -66,20 +68,20 @@ def get_top_matches(
     result = df_match.copy()
     result["distancia"] = distancias
 
-    mediana = np.median(distancias[distancias > 0])
+    mediana = np.median(distancias[np.arange(len(distancias)) != pos])
     matches = result[result["id_municipio"] != municipio_id].nsmallest(k, "distancia")
     matches = matches.copy()
     matches["ratio"] = matches["distancia"] / mediana
-    return matches, mediana
+    return matches
 
 
-def classify(ratio: float) -> tuple[str, str]:
+def classify(ratio: float) -> str:
     low, high = RATIO_THRESHOLDS
     if ratio < low:
-        return "🟢 Muito parecido", "green"
+        return "🟢 Muito parecido"
     if ratio < high:
-        return "🟡 Razoavelmente parecido", "orange"
-    return "🔴 Pouco parecido", "red"
+        return "🟡 Razoavelmente parecido"
+    return "🔴 Pouco parecido"
 
 
 def plot_small_multiples(alvo: pd.Series, matches: pd.DataFrame) -> go.Figure:
@@ -154,13 +156,13 @@ def main() -> None:
         return
 
     alvo = df_match[df_match["id_municipio"] == municipio_id].iloc[0]
-    matches, _ = get_top_matches(municipio_id, df_match, X, VI)
+    matches = get_top_matches(municipio_id, df_match, X, VI)
 
     st.subheader("Municípios mais similares")
 
     rows = []
     for i, (_, r) in enumerate(matches.iterrows(), 1):
-        label_sim, _ = classify(r["ratio"])
+        label_sim = classify(r["ratio"])
         rows.append({
             "#": i,
             "Município": r["nome_municipio"],
