@@ -182,7 +182,10 @@
 - Nenhum código alterado — apenas documentação
 - Elementary removido do roadmap inteiro (sem dados atualizáveis, sem valor); movido para backlog item 7 (pós-v1); seção removida do data_quality.md; roadmap renumerado (17 itens)
 
-**Última etapa concluída:** Feature 9 — Streamlit (fase 4a) — Produtizar — streamlit/app.py implementado e verificado (PASS)
-**Em andamento:** Feature 4 → 6 — dbt (fase 4b) — migração de dialeto dbt-duckdb → dbt-bigquery — não iniciada
+- Makefile criado: targets pipeline, ingest, transform, test, streamlit (ADR-006); path ADR corrigido
+- Ressalvas do validador em streamlit/app.py resolvidas: DB_PATH absoluto, classify simplificado, mediana por índice posicional
+
+**Última etapa concluída:** Feature 9 — Streamlit (fase 4a) — Produtizar — Makefile criado, todas as ressalvas resolvidas
+**Em andamento:** Features 4–6 — dbt (fase 4b) — migração de dialeto dbt-duckdb → dbt-bigquery — não iniciada
 
 ---
