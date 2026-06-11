@@ -189,3 +189,14 @@
 **Em andamento:** Features 4–6 — dbt (fase 4b) — migração de dialeto dbt-duckdb → dbt-bigquery — não iniciada
 
 ---
+
+**2026-06-11**
+- GCP provisionado: gcloud 572.0.0 + bq 2.1.32 instalados, ADC autenticada, projeto `data-pipeline-lab-497514` configurado
+- 4 datasets BigQuery criados: `dataset_raw`, `dataset_staging`, `dataset_intermediate`, `dataset_marts` (location=US)
+- `make setup-gcloud` adicionado ao Makefile com sequência completa de setup local
+- `exploration/fase_4b_exploration.ipynb` criado e executado: schemas mapeados, 4 débitos de dialeto identificados, opções de conector Streamlit avaliadas
+
+**Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Explorar — notebook fase_4b_exploration.ipynb concluído
+**Em andamento:** Features 4–6 — dbt (fase 4b) — Entender — docs/understanding/fase_4b.md não iniciado
+
+---
