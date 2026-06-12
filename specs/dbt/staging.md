@@ -9,7 +9,7 @@
 ## Contrato da camada
 
 ```
-O que chega:    Dado do dataset_raw (Phase 4a: Parquets locais)
+O que chega:    Dado do dev_raw (Phase 4a: Parquets locais)
 O que muda:     Cast de tipos, renomeação para snake_case, remoção de colunas de partição,
                 adição de row_hash (md5 all cols), remoção de duplicatas técnicas via QUALIFY
 O que NÃO muda: Granularidade — 1 linha raw = 1 linha staging (após dedup técnica)
@@ -31,7 +31,7 @@ meta:
   external_location: "read_parquet('../data/raw/{tabela}/**/*.parquet')"
 ```
 
-Phase 4b: substituir por sources BigQuery (`dataset_raw`). Ajustes de dialeto esperados (ADR-007).
+Phase 4b: substituir por sources BigQuery (`dev_raw`). Ajustes de dialeto esperados (ADR-007).
 
 ---
 

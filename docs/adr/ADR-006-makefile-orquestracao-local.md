@@ -19,12 +19,20 @@ A ADR-004 adotou Airflow via Docker Compose para orquestração local. Após a f
 Makefile com targets explícitos por etapa do pipeline:
 
 ```makefile
-pipeline:
-	uv run python ingestion/src/olist.py
-	uv run python ingestion/src/ibge_localidades.py
-	uv run python ingestion/src/ibge_censo.py
-	uv run python ingestion/src/bcb_pix.py
-	cd dbt && uv run dbt run --profiles-dir . && uv run dbt test --profiles-dir .
+auth:
+	gcloud auth login
+	gcloud auth application-default login
+
+setup-gcloud: auth
+	gcloud config set project <gcp_project>
+	gcloud services list --enabled --filter="name:bigquery"
+	bq mk --dataset --if-not-exists --location=US <gcp_project>:dev_raw
+	bq mk --dataset --if-not-exists --location=US <gcp_project>:dev_staging
+	bq mk --dataset --if-not-exists --location=US <gcp_project>:dev_intermediate
+	bq mk --dataset --if-not-exists --location=US <gcp_project>:dev_marts
+	bq ls --project_id=<gcp_project>
+
+pipeline: ingest transform test
 
 ingest:
 	uv run python ingestion/src/olist.py
@@ -42,6 +50,10 @@ test:
 streamlit:
 	uv run streamlit run streamlit/app.py
 ```
+
+- `make auth` — renovação de token (sessão); `make setup-gcloud` — provisionamento one-time (inclui auth)
+- Datasets nomeados `{ambiente}_{domínio}` (`dev_raw`, `prod_raw`, etc.) conforme `conventions.md`
+- `bq mk --if-not-exists` torna `setup-gcloud` idempotente — seguro de re-executar
 
 ## Justificativa
 

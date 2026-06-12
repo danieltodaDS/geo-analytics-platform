@@ -9,7 +9,7 @@
 ## Contrato da camada
 
 ```
-O que chega:    Parquets em data/raw/ (Phase 4a) ou dataset_raw no BigQuery (Phase 4b+)
+O que chega:    Parquets em data/raw/ (Phase 4a) ou dev_raw no BigQuery (Phase 4b+)
 O que faz:      Expõe o dado bruto como relação endereçável pelo dbt
 O que NÃO faz:  Nenhuma transformação — nem renomeação, nem cast, nem filtro
 Granularidade:  Idêntica ao Parquet — 1 linha raw = 1 linha raw model
@@ -21,7 +21,7 @@ Responsável:    dbt raw models + job de carga (bq load na Phase 4b)
 
 A camada raw no dbt existe para que staging e downstream nunca referenciem
 fontes externas diretamente. Em Phase 4a a fonte é o Parquet via `external_location`;
-em Phase 4b é o `dataset_raw` do BigQuery. O que muda entre fases é apenas
+em Phase 4b é o `dev_raw` do BigQuery. O que muda entre fases é apenas
 a configuração de fonte em `_sources.yml` — todos os modelos downstream
 (`{{ ref('olist_orders') }}` etc.) continuam inalterados.
 
@@ -30,7 +30,7 @@ a configuração de fonte em `_sources.yml` — todos os modelos downstream
 ## Modelos
 
 Um modelo por tabela raw. Nenhum prefixo — o nome do modelo é igual ao nome
-da tabela no Parquet/dataset_raw.
+da tabela no Parquet/dev_raw.
 
 | Modelo | Fonte | Schema Parquet |
 |---|---|---|
@@ -71,13 +71,13 @@ O path é relativo ao diretório `dbt/` onde os comandos dbt são executados.
 
 ### Migração Phase 4b
 
-Substituir `_sources.yml` por sources apontando para `dataset_raw` no BigQuery:
+Substituir `_sources.yml` por sources apontando para `dev_raw` no BigQuery:
 
 ```yaml
 sources:
-  - name: dataset_raw
+  - name: raw
     database: <gcp_project>
-    schema: dataset_raw
+    schema: dev_raw
     tables:
       - name: olist_customers
       # sem external_location — BigQuery resolve a tabela nativamente

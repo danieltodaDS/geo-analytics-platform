@@ -26,7 +26,7 @@ Imutabilidade:  Nunca sobrescrito — só append
 Responsável:    Script de ingestão + validação Pydantic
 ```
 
-### dataset_raw — BigQuery
+### dev_raw / prod_raw — BigQuery
 
 ```
 O que chega:    Carga direta do GCS, sem transformação
@@ -35,10 +35,10 @@ Granularidade:  Idêntica ao Parquet raw
 Responsável:    bq load (local) ou ingest.yml (remoto)
 ```
 
-### dataset_staging — BigQuery (dbt)
+### dev_staging / prod_staging — BigQuery (dbt)
 
 ```
-O que chega:    Dado do dataset_raw
+O que chega:    Dado do dev_raw / prod_raw
 O que muda:     Limpeza de tipos, renomeação para snake_case,
                 dedup técnica (row_hash), cast de datas
 O que NÃO muda: Granularidade — 1 linha raw = 1 linha staging
@@ -46,7 +46,7 @@ O que NÃO muda: Granularidade — 1 linha raw = 1 linha staging
 Responsável:    dbt staging models
 ```
 
-### dataset_intermediate — BigQuery (dbt)
+### dev_intermediate / prod_intermediate — BigQuery (dbt)
 
 ```
 O que chega:    Modelos de staging (uma ou mais fontes)
@@ -56,7 +56,7 @@ O que muda:     Joins, agregações, regras de negócio,
 Responsável:    dbt intermediate models
 ```
 
-### dataset_marts — BigQuery (dbt)
+### dev_marts / prod_marts — BigQuery (dbt)
 
 ```
 O que chega:    Modelos intermediate

@@ -35,10 +35,10 @@
 
 | Dataset | Camada dbt |
 |---|---|
-| `dataset_raw` | raw |
-| `dataset_staging` | staging |
-| `dataset_intermediate` | intermediate |
-| `dataset_marts` | marts |
+| `dev_raw` | raw |
+| `dev_staging` | staging |
+| `dev_intermediate` | intermediate |
+| `dev_marts` | marts |
 
 > Provisionamento one-time manual via `make setup-gcloud` — sem Terraform (fora do escopo v1, per ADR-009).
 
@@ -135,7 +135,7 @@ Usar `--autodetect` na carga inicial. Colunas de risco concreto (tipo inferido e
 | todas | `year` | `BIGINT` | Inferido como `INT64` | OK |
 | todas | `month`, `day` | `VARCHAR` | Inferido como `STRING` | OK |
 
-Verificar schema real após carga via `bq show dataset_raw.<tabela>` para as tabelas IBGE. Demais tabelas sem risco de inferência crítica.
+Verificar schema real após carga via `bq show dev_raw.<tabela>` para as tabelas IBGE. Demais tabelas sem risco de inferência crítica.
 
 > Não configurar particionamento BigQuery na fase 4b — escopo mínimo. Colunas `year`/`month`/`day` permanecem como colunas simples.
 
@@ -157,7 +157,7 @@ geo_analytics:
       timeout_seconds: 300
 ```
 
-> O campo `dataset` é obrigatório no profiles.yml do dbt-bigquery, mas **nunca é usado na prática**: a macro `generate_schema_name.sql` existente sobrescreve o schema de cada camada explicitamente (`dataset_raw`, `dataset_staging`, `dataset_intermediate`, `dataset_marts`). O valor `dataset_dev` serve apenas de placeholder para satisfazer a validação do adapter.
+> O campo `dataset` é obrigatório no profiles.yml do dbt-bigquery, mas **nunca é usado na prática**: a macro `generate_schema_name.sql` existente sobrescreve o schema de cada camada explicitamente (`dev_raw`, `dev_staging`, `dev_intermediate`, `dev_marts`). O valor `dataset_dev` serve apenas de placeholder para satisfazer a validação do adapter.
 
 ---
 
@@ -182,7 +182,7 @@ Na fase 4b, o source aponta para tabelas já carregadas no BigQuery via `bq load
 sources:
   - name: raw
     database: data-pipeline-lab-497514
-    schema: dataset_raw
+    schema: dev_raw
     tables:
       - name: olist_customers
       # ... demais tabelas

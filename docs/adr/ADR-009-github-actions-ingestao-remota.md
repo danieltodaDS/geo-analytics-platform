@@ -65,5 +65,5 @@ uv run python ingest.py   uv run python ingest.py
     ↓                         ↓
 Parquet em data/raw/      Parquet em GCS
                               ↓
-                          bq load → dataset_raw no BigQuery
+                          bq load → prod_raw no BigQuery
 ```
