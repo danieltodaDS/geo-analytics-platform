@@ -1,0 +1,361 @@
+# Spec — Fase 4b: Migração dbt-duckdb → dbt-bigquery
+
+> Pré-requisito: `docs/understanding/fase_4b.md` lido na íntegra.
+> Base normativa: ADR-001, ADR-007, ADR-008, `conventions.md`, `data_quality.md`.
+> Antes de gerar código, leia esta spec na íntegra.
+
+---
+
+## Contrato da fase
+
+```
+O que muda:     Adapter dbt (dbt-duckdb → dbt-bigquery)
+                profiles.yml (DuckDB local → BigQuery OAuth)
+                _sources.yml (external_location → tabelas BigQuery)
+                4 modelos intermediate (débitos de dialeto SQL)
+                Streamlit (DuckDB → google-cloud-bigquery)
+                2 novas macros cross-db (compat_datediff, compat_mode)
+
+O que NÃO muda: Parquets em data/raw/ — permanecem locais (GCS é fase 4c)
+                Lógica de negócio de todos os modelos
+                Estrutura de camadas raw → staging → intermediate → marts
+                Suite de testes completa (_staging.yml, _intermediate.yml, _marts.yml)
+```
+
+---
+
+## Pré-requisitos
+
+- Datasets BigQuery criados: `raw`, `staging`, `intermediate`, `marts` (`make setup-gcloud` executado)
+- ADC autenticada: `make auth`
+- Parquets em `data/raw/` completos (ingestão fase 4a concluída)
+
+---
+
+## Sequência de implementação
+
+### Passo 1 — Tag fase 4a
+
+```bash
+git tag v0.1-fase-4a
+```
+
+Ponto de retorno seguro antes de qualquer alteração.
+
+---
+
+### Passo 2 — Troca de adapter e dependências
+
+```bash
+uv remove dbt-duckdb
+uv add dbt-bigquery
+uv add google-cloud-bigquery
+```
+
+> Após este passo, `dbt run` contra o profile DuckDB existente quebra — esperado.
+> Não executar `dbt` até o profiles.yml estar atualizado (Passo 4).
+
+---
+
+### Passo 3 — Carga dos Parquets no BigQuery (`make bq-load`)
+
+Adicionar target ao Makefile:
+
+```makefile
+bq-load:
+	bq load --replace --autodetect --source_format=PARQUET raw.olist_customers \
+		$(shell find data/raw/olist_customers -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.olist_orders \
+		$(shell find data/raw/olist_orders -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.olist_order_items \
+		$(shell find data/raw/olist_order_items -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.olist_order_payments \
+		$(shell find data/raw/olist_order_payments -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.olist_order_reviews \
+		$(shell find data/raw/olist_order_reviews -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.olist_geolocation \
+		$(shell find data/raw/olist_geolocation -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.olist_products \
+		$(shell find data/raw/olist_products -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.olist_sellers \
+		$(shell find data/raw/olist_sellers -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.ibge_localidades \
+		$(shell find data/raw/ibge_localidades -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.ibge_censo_9936 \
+		$(shell find data/raw/ibge_censo_9936 -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.ibge_censo_10295 \
+		$(shell find data/raw/ibge_censo_10295 -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.ibge_censo_9514 \
+		$(shell find data/raw/ibge_censo_9514 -name "*.parquet")
+	bq load --replace --autodetect --source_format=PARQUET raw.bcb_pix \
+		$(shell find data/raw/bcb_pix -name "*.parquet")
+```
+
+**`--replace`**: garante idempotência — re-executar `make bq-load` recria as tabelas sem acumular linhas.
+
+**Verificação pós-carga obrigatória para IBGE:**
+```bash
+bq show raw.ibge_localidades
+```
+Confirmar que `microrregiao_id` e `mesorregiao_id` foram inferidos como `FLOAT64` (aceitável — staging faz cast para `INT64`).
+
+---
+
+### Passo 4 — Atualizar `dbt/profiles.yml`
+
+Substituir conteúdo completo:
+
+```yaml
+geo_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: data-pipeline-lab-497514
+      dataset: raw   # placeholder obrigatório pelo adapter — sobrescrito por generate_schema_name.sql
+      location: US
+      threads: 4
+      timeout_seconds: 300
+```
+
+Validar:
+```bash
+cd dbt && uv run dbt debug --profiles-dir .
+```
+
+---
+
+### Passo 5 — Atualizar `dbt/models/raw/_sources.yml`
+
+Substituir conteúdo completo:
+
+```yaml
+version: 2
+
+sources:
+  - name: raw
+    database: data-pipeline-lab-497514
+    schema: raw
+    tables:
+      - name: olist_customers
+      - name: olist_orders
+      - name: olist_order_items
+      - name: olist_order_payments
+      - name: olist_order_reviews
+      - name: olist_geolocation
+      - name: olist_products
+      - name: olist_sellers
+      - name: ibge_localidades
+      - name: ibge_censo_9936
+      - name: ibge_censo_10295
+      - name: ibge_censo_9514
+      - name: bcb_pix
+```
+
+### Passo 5b — Atualizar referências nos modelos raw
+
+Todos os 13 arquivos em `dbt/models/raw/*.sql` referenciam `source('parquet_files', ...)`.
+Substituir globalmente:
+
+```
+source('parquet_files', → source('raw',
+```
+
+---
+
+### Passo 6 — Criar macros cross-db
+
+**`dbt/macros/compat_datediff.sql`** (novo arquivo):
+
+```sql
+{% macro compat_datediff(datepart, start, end) %}
+    {% if target.type == 'bigquery' %}
+        DATE_DIFF({{ end }}, {{ start }}, {{ datepart }})
+    {% else %}
+        datediff('{{ datepart }}', {{ start }}, {{ end }})
+    {% endif %}
+{% endmacro %}
+```
+
+> Atenção: BigQuery inverte a ordem dos argumentos — `DATE_DIFF(end, start, part)`.
+> Um erro aqui retorna valores negativos sem sinalizar erro.
+
+**`dbt/macros/compat_mode.sql`** (novo arquivo):
+
+```sql
+{% macro compat_mode(expr) %}
+    {% if target.type == 'bigquery' %}
+        APPROX_TOP_COUNT({{ expr }}, 1)[OFFSET(0)].value
+    {% else %}
+        mode({{ expr }})
+    {% endif %}
+{% endmacro %}
+```
+
+---
+
+### Passo 7 — Corrigir débitos de dialeto
+
+#### `dbt/models/intermediate/int_fact_orders.sql` — 3 ocorrências
+
+```sql
+-- antes
+datediff('day', o.order_purchase_timestamp, o.order_approved_at)             as approval_days,
+datediff('day', o.order_purchase_timestamp, o.order_estimated_delivery_date)  as estimated_delivery_days,
+datediff('day', o.order_purchase_timestamp, o.order_delivered_customer_date)  as delivery_days,
+
+-- depois
+{{ compat_datediff('DAY', 'o.order_purchase_timestamp', 'o.order_approved_at') }}            as approval_days,
+{{ compat_datediff('DAY', 'o.order_purchase_timestamp', 'o.order_estimated_delivery_date') }} as estimated_delivery_days,
+{{ compat_datediff('DAY', 'o.order_purchase_timestamp', 'o.order_delivered_customer_date') }} as delivery_days,
+```
+
+#### `dbt/models/intermediate/int_olist_geolocation.sql` — 2 ocorrências
+
+```sql
+-- antes
+mode(geolocation_city)   as geolocation_city,
+mode(geolocation_state)  as geolocation_state
+
+-- depois
+{{ compat_mode('geolocation_city') }}   as geolocation_city,
+{{ compat_mode('geolocation_state') }}  as geolocation_state
+```
+
+#### `dbt/models/intermediate/int_dim_customers.sql` — 3 ocorrências
+
+```sql
+-- antes
+mode(customer_zip_code_prefix)  as customer_zip_code_prefix,
+mode(customer_state)            as customer_state,
+mode(customer_city)             as customer_city
+
+-- depois
+{{ compat_mode('customer_zip_code_prefix') }}  as customer_zip_code_prefix,
+{{ compat_mode('customer_state') }}            as customer_state,
+{{ compat_mode('customer_city') }}             as customer_city
+```
+
+#### `dbt/models/intermediate/int_olist_order_items_agg.sql` — 1 ocorrência
+
+```sql
+-- antes
+mode(product_category_name)  as dominant_category_name
+
+-- depois
+{{ compat_mode('product_category_name') }}  as dominant_category_name
+```
+
+#### `dbt/models/intermediate/int_olist_order_payments_agg.sql` — 6 ocorrências
+
+BigQuery não suporta `FILTER (WHERE ...)` — substituição direta no modelo, sem macro:
+
+```sql
+-- antes
+sum(payment_value) filter (where payment_type = 'credit_card')        as credit_card_value,
+max(payment_installments) filter (where payment_type = 'credit_card') as credit_card_installments,
+sum(payment_value) filter (where payment_type = 'boleto')             as boleto_value,
+sum(payment_value) filter (where payment_type = 'voucher')            as voucher_value,
+sum(payment_value) filter (where payment_type = 'debit_card')         as debit_card_value,
+sum(payment_value) filter (where payment_type = 'not_defined')        as not_defined_value,
+
+-- depois
+sum(if(payment_type = 'credit_card', payment_value, null))        as credit_card_value,
+max(if(payment_type = 'credit_card', payment_installments, null)) as credit_card_installments,
+sum(if(payment_type = 'boleto', payment_value, null))             as boleto_value,
+sum(if(payment_type = 'voucher', payment_value, null))            as voucher_value,
+sum(if(payment_type = 'debit_card', payment_value, null))         as debit_card_value,
+sum(if(payment_type = 'not_defined', payment_value, null))        as not_defined_value,
+```
+
+#### `dbt/models/intermediate/int_bcb_pix_municipio.sql` — 1 ocorrência
+
+```sql
+-- antes
+strptime(ano_mes::varchar, '%Y%m')::date  as ano_mes_data,
+
+-- depois
+PARSE_DATE('%Y%m', CAST(ano_mes AS STRING))  as ano_mes_data,
+```
+
+---
+
+### Passo 8 — Validação incremental
+
+Estratégia: validar modelo a modelo para controlar custo de queries.
+**Não rodar `dbt build` completo a cada iteração.**
+
+```bash
+cd dbt
+
+# 1. Verificar conexão
+uv run dbt debug --profiles-dir .
+
+# 2. Raw layer — valida bq load e sources
+uv run dbt build --select raw --profiles-dir .
+
+# 3. Staging — sem alterações de código, mas valida tipos BigQuery
+uv run dbt build --select staging --profiles-dir .
+
+# 4. Modelos corrigidos — um a um
+uv run dbt build --select int_fact_orders --profiles-dir .
+uv run dbt build --select int_olist_geolocation --profiles-dir .
+uv run dbt build --select int_dim_customers --profiles-dir .
+uv run dbt build --select int_olist_order_items_agg --profiles-dir .
+uv run dbt build --select int_olist_order_payments_agg --profiles-dir .
+uv run dbt build --select int_bcb_pix_municipio --profiles-dir .
+
+# 5. Intermediate restante
+uv run dbt build --select intermediate --profiles-dir .
+
+# 6. Marts
+uv run dbt build --select marts --profiles-dir .
+
+# 7. Build e test completo final
+uv run dbt build --profiles-dir .
+```
+
+---
+
+### Passo 9 — Migrar Streamlit
+
+**Variáveis de ambiente necessárias** (adicionar ao `.env` ou exportar):
+
+```
+GCP_PROJECT=data-pipeline-lab-497514
+GCP_DATASET_MARTS=marts
+```
+
+**`streamlit/app.py`** — substituir import e função de carga:
+
+```python
+# remover
+import duckdb
+
+# adicionar
+from google.cloud import bigquery
+
+# substituir load_data()
+@st.cache_data(ttl=3600)
+def load_data() -> pd.DataFrame:
+    project = os.environ["GCP_PROJECT"]
+    dataset = os.environ["GCP_DATASET_MARTS"]
+    client = bigquery.Client(project=project)
+    sql = f"SELECT * FROM `{project}.{dataset}.mart_geo_analytics`"
+    return client.query(sql).to_dataframe()
+```
+
+> `@st.cache_data(ttl=3600)` obrigatório — evita query a cada re-render do Streamlit.
+
+---
+
+## Critério de conclusão
+
+- `dbt build` completo sem erros ou falhas de teste
+- `make streamlit` carrega dados do BigQuery sem erro
+- Contagem de linhas dos marts igual à fase 4a (regressão zero)
+
+---
+
+*Spec fechada em: Junho/2026*
