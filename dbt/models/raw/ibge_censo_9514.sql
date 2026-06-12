@@ -1,1 +1,1 @@
-select * from {{ source('parquet_files', 'ibge_censo_9514') }}
+select * from {{ source('raw', 'ibge_censo_9514') }}

@@ -5,14 +5,14 @@ with source as (
 aggregated as (
     select
         order_id,
-        sum(payment_value) filter (where payment_type = 'credit_card')        as credit_card_value,
-        max(payment_installments) filter (where payment_type = 'credit_card') as credit_card_installments,
-        sum(payment_value) filter (where payment_type = 'boleto')             as boleto_value,
-        sum(payment_value) filter (where payment_type = 'voucher')            as voucher_value,
-        sum(payment_value) filter (where payment_type = 'debit_card')         as debit_card_value,
-        sum(payment_value) filter (where payment_type = 'not_defined')        as not_defined_value,
-        sum(payment_value)                                                      as total_payment_value,
-        count(distinct payment_type)                                            as payment_types_count
+        sum(if(payment_type = 'credit_card', payment_value, null))        as credit_card_value,
+        max(if(payment_type = 'credit_card', payment_installments, null)) as credit_card_installments,
+        sum(if(payment_type = 'boleto', payment_value, null))             as boleto_value,
+        sum(if(payment_type = 'voucher', payment_value, null))            as voucher_value,
+        sum(if(payment_type = 'debit_card', payment_value, null))         as debit_card_value,
+        sum(if(payment_type = 'not_defined', payment_value, null))        as not_defined_value,
+        sum(payment_value)                                                  as total_payment_value,
+        count(distinct payment_type)                                        as payment_types_count
     from source
     group by order_id
 )

@@ -13,9 +13,9 @@ geolocation as (
 canonical as (
     select
         customer_unique_id,
-        mode(customer_zip_code_prefix)  as customer_zip_code_prefix,
-        mode(customer_state)            as customer_state,
-        mode(customer_city)             as customer_city
+        {{ compat_mode('customer_zip_code_prefix') }}  as customer_zip_code_prefix,
+        {{ compat_mode('customer_state') }}            as customer_state,
+        {{ compat_mode('customer_city') }}             as customer_city
     from customers
     group by customer_unique_id
 )

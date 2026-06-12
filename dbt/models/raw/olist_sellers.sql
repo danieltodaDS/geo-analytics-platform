@@ -1,1 +1,1 @@
-select * from {{ source('parquet_files', 'olist_sellers') }}
+select * from {{ source('raw', 'olist_sellers') }}

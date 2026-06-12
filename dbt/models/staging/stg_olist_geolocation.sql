@@ -5,11 +5,11 @@ with source as (
 deduped as (
     select
         md5(
-            coalesce(geolocation_zip_code_prefix,    '') || '|' ||
-            coalesce(geolocation_lat::varchar,       '') || '|' ||
-            coalesce(geolocation_lng::varchar,       '') || '|' ||
-            coalesce(geolocation_city,               '') || '|' ||
-            coalesce(geolocation_state,              '')
+            coalesce(CAST(geolocation_zip_code_prefix AS STRING), '') || '|' ||
+            coalesce(CAST(geolocation_lat AS STRING),    '') || '|' ||
+            coalesce(CAST(geolocation_lng AS STRING),    '') || '|' ||
+            coalesce(geolocation_city,                   '') || '|' ||
+            coalesce(geolocation_state,                  '')
         ) as row_hash,
         *
     from source

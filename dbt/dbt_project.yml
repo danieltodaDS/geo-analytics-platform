@@ -15,11 +15,11 @@ clean-targets:
 
 models:
   geo_analytics:
-    # view sobre Parquets/GCS; filtro de partição obrigatório nas queries downstream
-    # testes: nenhum — qualidade garantida pela validação Pydantic na ingestão
+    # views sobre tabelas carregadas em raw (bq load); sem testes — qualidade garantida pela ingestão
+    # schema separado de raw evita conflito de nomes com as tabelas físicas do bq load
     raw:
       +materialized: view
-      +schema: raw
+      +schema: raw_views
     # table full-refresh (big data: incremental com particionamento/clusterização)
     # testes: not_null nos identificadores mínimos; unique não testado (ADR-008)
     # dedup técnica (linhas idênticas) removida no modelo; dedup semântica no intermediate
