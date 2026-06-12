@@ -172,7 +172,7 @@ source('parquet_files', → source('raw',
 ```sql
 {% macro compat_datediff(datepart, start, end) %}
     {% if target.type == 'bigquery' %}
-        DATE_DIFF({{ end }}, {{ start }}, {{ datepart }})
+        DATE_DIFF(DATE({{ end }}), DATE({{ start }}), {{ datepart }})
     {% else %}
         datediff('{{ datepart }}', {{ start }}, {{ end }})
     {% endif %}
@@ -390,7 +390,7 @@ uv run dbt debug --profiles-dir .
 # 2. Raw layer — valida bq load e sources
 uv run dbt build --select raw --profiles-dir .
 
-# 3. Staging — sem alterações de código, mas valida tipos BigQuery
+# 3. Staging — valida TRY_CAST→SAFE_CAST e ::cast→CAST
 uv run dbt build --select staging --profiles-dir .
 
 # 4. Modelos corrigidos — um a um
