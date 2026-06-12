@@ -200,3 +200,14 @@
 **Em andamento:** Features 4–6 — dbt (fase 4b) — Especificar — specs/dbt/fase_4b.md não iniciado
 
 ---
+
+**2026-06-12**
+- Makefile refatorado: `auth` separado de `setup-gcloud`; `bq mk --if-not-exists` torna target idempotente; `bq-load` adicionado ao `.PHONY`
+- Convenção de nomenclatura BigQuery simplificada: prefixo `dev_`/`prod_` removido — datasets nomeados por camada (`raw`, `staging`, `intermediate`, `marts`); datasets BigQuery recriados; `conventions.md` atualizado como fonte da verdade; 11 arquivos de doc corrigidos
+- `specs/dbt/fase_4b.md` criada e aprovada após 3 rodadas de validação — débitos de dialeto completos: `TRY_CAST→SAFE_CAST` (7 staging), `::cast→CAST` (7 staging + 1 intermediate), `normalize_city_name` cross-db (4 intermediate), `DATE_DIFF(DATE(...))` para colunas TIMESTAMP
+- Decisão: critério de conclusão da fase 4b compara staging BigQuery vs volumes dos Parquets (não mart — derivado pode mascarar erros de carga)
+
+**Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Especificar — specs/dbt/fase_4b.md aprovada pelo Validador
+**Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — não iniciada
+
+---
