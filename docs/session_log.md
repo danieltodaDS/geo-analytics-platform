@@ -211,3 +211,17 @@
 **Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — não iniciada
 
 ---
+
+**2026-06-12 (continuação)**
+- Adapter trocado: dbt-duckdb → dbt-bigquery 1.11.1; google-cloud-bigquery adicionado
+- 13 Parquets carregados no BigQuery (raw dataset) via `make bq-load`; volumes OK
+- dbt raw layer movido para dataset `raw_views` (evita conflito de nomes com bq load)
+- Macros cross-db criadas: `compat_datediff`, `compat_mode`, `normalize_city_name` (BQ/DuckDB)
+- Staging: TRY_CAST→SAFE_CAST, ::cast→CAST, COALESCE tipado (13 modelos); Intermediate: 5 débitos corrigidos; Marts: double→FLOAT64
+- Streamlit migrado: duckdb→google-cloud-bigquery, cache_data(ttl=3600)
+- Build completo: 186/186 testes passando; volumes staging OK (99.441 / 378.663 / 5.571)
+
+**Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Produtizar — 186/186 testes passando, volumes confirmados
+**Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — Streamlit não testado (pendente `make streamlit`)
+
+---
