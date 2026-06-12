@@ -233,6 +233,16 @@
 - profiles.yml restaurado para DuckDB; BQ BigQuery datasets a limpar antes da reimplementação
 
 **Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Especificar — spec corrigida e aprovada pelo Validador
-**Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — aguardando limpeza dos datasets BQ e reimplementação
+**Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — pré-condições pendentes antes de iniciar
+
+**Pré-condições obrigatórias antes da reimplementação (executar nesta ordem):**
+1. Dropar todos os datasets BQ incorretos:
+   `bq rm -r -f data-pipeline-lab-497514:raw`
+   `bq rm -r -f data-pipeline-lab-497514:raw_views`
+   `bq rm -r -f data-pipeline-lab-497514:staging`
+   `bq rm -r -f data-pipeline-lab-497514:intermediate`
+   `bq rm -r -f data-pipeline-lab-497514:marts`
+2. Recriar datasets limpos + criar `landing`: `make setup-gcloud` (após atualizar o Makefile para incluir `landing`)
+3. Seguir spec `specs/dbt/fase_4b.md` do Passo 1 ao 11
 
 ---
