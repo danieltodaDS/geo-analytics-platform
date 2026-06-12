@@ -4,7 +4,7 @@ with source as (
 
 select
     municipio_ibge,
-    PARSE_DATE('%Y%m', CAST(ano_mes AS STRING))  as ano_mes_data,
+    strptime(ano_mes::varchar, '%Y%m')::date     as ano_mes_data,
     municipio,
     estado_ibge,
     estado,

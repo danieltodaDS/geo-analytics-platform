@@ -69,16 +69,16 @@ final as (
         p.total_valor_pagador,
         p.total_valor_recebedor,
         p.total_valor_pagador / nullif(p.populacao_residente, 0)                                as valor_pix_per_capita,
-        CAST(p.total_transacoes_pagador AS FLOAT64) / nullif(p.populacao_residente, 0)           as transacoes_pix_per_capita,
-        CAST(p.qt_pagador_pf AS FLOAT64) / nullif(p.total_transacoes_pagador, 0)                as pct_transacoes_pagador_pf,
+        cast(p.total_transacoes_pagador as double) / nullif(p.populacao_residente, 0)           as transacoes_pix_per_capita,
+        cast(p.qt_pagador_pf as double) / nullif(p.total_transacoes_pagador, 0)                as pct_transacoes_pagador_pf,
         p.vl_recebedor_pj / nullif(p.total_valor_recebedor, 0)                                 as pct_valor_recebedor_pj,
-        CAST(p.qt_recebedor_pj AS FLOAT64) / nullif(p.total_transacoes_recebedor, 0)            as pct_transacoes_recebedor_pj,
+        cast(p.qt_recebedor_pj as double) / nullif(p.total_transacoes_recebedor, 0)            as pct_transacoes_recebedor_pj,
         p.anos_pix_disponiveis,
 
         -- derivadas cruzadas
         o.receita_total / nullif(p.populacao_residente, 0)                                     as receita_por_habitante,
-        CAST(o.total_pedidos AS FLOAT64) / nullif(p.populacao_residente, 0)                     as pedidos_por_habitante,
-        CAST(o.clientes_unicos AS FLOAT64) / nullif(p.populacao_residente, 0)                   as penetracao_olist
+        cast(o.total_pedidos as double) / nullif(p.populacao_residente, 0)                     as pedidos_por_habitante,
+        cast(o.clientes_unicos as double) / nullif(p.populacao_residente, 0)                   as penetracao_olist
 
     from olist_2018 o
     inner join pix_periodo p on o.id_municipio = p.id_municipio

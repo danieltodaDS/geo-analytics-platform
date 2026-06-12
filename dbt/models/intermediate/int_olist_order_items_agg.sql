@@ -31,7 +31,7 @@ aggregated as (
         sum(price)                       as total_price,
         sum(freight_value)               as total_freight_value,
         sum(price) + sum(freight_value)  as total_revenue,
-        {{ compat_mode('product_category_name') }}  as dominant_category_name
+        mode(product_category_name)      as dominant_category_name
     from enriched
     group by order_id
 )

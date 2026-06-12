@@ -52,9 +52,9 @@ aggregated as (
         sum(case when order_status = 'delivered' then 1 else 0 end)                                                        as pedidos_entregues,
         sum(case when order_status in ('canceled', 'unavailable') then 1 else 0 end)                                       as pedidos_cancelados,
         sum(case when order_status in ('shipped', 'invoiced', 'processing', 'approved', 'created') then 1 else 0 end)      as pedidos_em_andamento,
-        CAST(sum(case when order_status = 'delivered' then 1 else 0 end) AS FLOAT64)
+        cast(sum(case when order_status = 'delivered' then 1 else 0 end) as double)
             / nullif(count(*), 0)                                                                                           as taxa_entrega,
-        CAST(sum(case when order_status in ('canceled', 'unavailable') then 1 else 0 end) AS FLOAT64)
+        cast(sum(case when order_status in ('canceled', 'unavailable') then 1 else 0 end) as double)
             / nullif(count(*), 0)                                                                                           as taxa_cancelamento,
         count(distinct customer_unique_id)                                                                                  as clientes_unicos,
 
@@ -73,16 +73,16 @@ aggregated as (
         -- logística (apenas pedidos entregues)
         avg(case when order_status = 'delivered' then delivery_days end)                                                    as avg_dias_entrega,
         avg(case when order_status = 'delivered' then approval_days end)                                                    as avg_dias_aprovacao,
-        CAST(sum(case when is_on_time = true then 1 else 0 end) AS FLOAT64)
+        cast(sum(case when is_on_time = true then 1 else 0 end) as double)
             / nullif(sum(case when order_status = 'delivered' then 1 else 0 end), 0)                                       as taxa_entrega_no_prazo,
 
         -- satisfação (pedidos com review)
         avg(review_score)                                                                                                   as avg_review_score,
-        CAST(sum(case when review_score >= 4 then 1 else 0 end) AS FLOAT64)
+        cast(sum(case when review_score >= 4 then 1 else 0 end) as double)
             / nullif(sum(case when review_score is not null then 1 else 0 end), 0)                                         as pct_avaliacao_positiva,
-        CAST(sum(case when review_score <= 2 then 1 else 0 end) AS FLOAT64)
+        cast(sum(case when review_score <= 2 then 1 else 0 end) as double)
             / nullif(sum(case when review_score is not null then 1 else 0 end), 0)                                         as pct_avaliacao_negativa,
-        CAST(sum(case when review_score is not null then 1 else 0 end) AS FLOAT64)
+        cast(sum(case when review_score is not null then 1 else 0 end) as double)
             / nullif(sum(case when order_status = 'delivered' then 1 else 0 end), 0)                                       as pct_pedidos_com_review
 
     from orders_municipio

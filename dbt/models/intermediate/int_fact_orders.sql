@@ -55,9 +55,9 @@ joined as (
         g.geolocation_lng                                                               as customer_lng,
 
         -- delivery metrics
-        {{ compat_datediff('DAY', 'o.order_purchase_timestamp', 'o.order_approved_at') }}             as approval_days,
-        {{ compat_datediff('DAY', 'o.order_purchase_timestamp', 'o.order_estimated_delivery_date') }} as estimated_delivery_days,
-        {{ compat_datediff('DAY', 'o.order_purchase_timestamp', 'o.order_delivered_customer_date') }} as delivery_days,
+        datediff('day', o.order_purchase_timestamp, o.order_approved_at)               as approval_days,
+        datediff('day', o.order_purchase_timestamp, o.order_estimated_delivery_date)   as estimated_delivery_days,
+        datediff('day', o.order_purchase_timestamp, o.order_delivered_customer_date)   as delivery_days,
         case
             when o.order_delivered_customer_date is null then null
             else o.order_delivered_customer_date <= o.order_estimated_delivery_date

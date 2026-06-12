@@ -225,3 +225,14 @@
 **Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — Streamlit não testado (pendente `make streamlit`)
 
 ---
+
+**2026-06-12 (continuação 2)**
+- Decisão arquitetural: dataset `landing` como zona de ingestão (bq load); `raw` = views dbt sobre landing — preserva contrato da fase 4a
+- Spec fase_4b.md corrigida: landing como datalake, transição 4c via External Tables no mesmo dataset landing, numeração 1–11
+- Revert da implementação incorreta (raw_views workaround): 44 arquivos restaurados para estado v0.1-fase-4a
+- profiles.yml restaurado para DuckDB; BQ BigQuery datasets a limpar antes da reimplementação
+
+**Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Especificar — spec corrigida e aprovada pelo Validador
+**Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — aguardando limpeza dos datasets BQ e reimplementação
+
+---

@@ -1,1 +1,1 @@
-select * from {{ source('raw', 'olist_geolocation') }}
+select * from {{ source('parquet_files', 'olist_geolocation') }}

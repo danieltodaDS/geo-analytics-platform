@@ -5,15 +5,15 @@ with source as (
 deduped as (
     select
         md5(
-            coalesce(product_id,                              '') || '|' ||
-            coalesce(product_category_name,                   '') || '|' ||
-            coalesce(CAST(product_name_lenght AS STRING),     '') || '|' ||
-            coalesce(CAST(product_description_lenght AS STRING),'') || '|' ||
-            coalesce(CAST(product_photos_qty AS STRING),      '') || '|' ||
-            coalesce(CAST(product_weight_g AS STRING),        '') || '|' ||
-            coalesce(CAST(product_length_cm AS STRING),       '') || '|' ||
-            coalesce(CAST(product_height_cm AS STRING),       '') || '|' ||
-            coalesce(CAST(product_width_cm AS STRING),        '')
+            coalesce(product_id,                         '') || '|' ||
+            coalesce(product_category_name,              '') || '|' ||
+            coalesce(product_name_lenght::varchar,       '') || '|' ||
+            coalesce(product_description_lenght::varchar,'') || '|' ||
+            coalesce(product_photos_qty::varchar,        '') || '|' ||
+            coalesce(product_weight_g::varchar,          '') || '|' ||
+            coalesce(product_length_cm::varchar,         '') || '|' ||
+            coalesce(product_height_cm::varchar,         '') || '|' ||
+            coalesce(product_width_cm::varchar,          '')
         ) as row_hash,
         *
     from source

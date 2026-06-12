@@ -33,8 +33,8 @@ final as (
         p.total_valor_pagador,
         p.qt_pagador_pf,
         p.total_valor_pagador / nullif(m.populacao_residente, 0)                    as valor_pix_per_capita,
-        CAST(p.total_transacoes_pagador AS FLOAT64) / nullif(m.populacao_residente, 0) as transacoes_pix_per_capita,
-        CAST(p.qt_pagador_pf AS FLOAT64) / nullif(p.total_transacoes_pagador, 0)     as pct_transacoes_pagador_pf,
+        cast(p.total_transacoes_pagador as double) / nullif(m.populacao_residente, 0) as transacoes_pix_per_capita,
+        cast(p.qt_pagador_pf as double) / nullif(p.total_transacoes_pagador, 0)     as pct_transacoes_pagador_pf,
 
         -- pix recebedor
         p.total_transacoes_recebedor,
@@ -42,7 +42,7 @@ final as (
         p.vl_recebedor_pj,
         p.qt_recebedor_pj,
         p.vl_recebedor_pj / nullif(p.total_valor_recebedor, 0)                     as pct_valor_recebedor_pj,
-        CAST(p.qt_recebedor_pj AS FLOAT64) / nullif(p.total_transacoes_recebedor, 0) as pct_transacoes_recebedor_pj,
+        cast(p.qt_recebedor_pj as double) / nullif(p.total_transacoes_recebedor, 0) as pct_transacoes_recebedor_pj,
         p.n_meses_pix
 
     from {{ ref('int_ibge_municipios') }} m

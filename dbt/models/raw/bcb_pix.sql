@@ -1,1 +1,1 @@
-select * from {{ source('raw', 'bcb_pix') }}
+select * from {{ source('parquet_files', 'bcb_pix') }}

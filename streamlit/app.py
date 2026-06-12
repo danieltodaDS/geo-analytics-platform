@@ -1,12 +1,14 @@
-import os
-
+import duckdb
 import numpy as np
 import pandas as pd
 import streamlit as st
-from google.cloud import bigquery
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from scipy.spatial.distance import cdist
+
+from pathlib import Path
+
+DB_PATH = Path(__file__).parent.parent / "dbt" / "geo_analytics.duckdb"
 
 FEATURES = [
     "populacao_residente",
@@ -34,13 +36,12 @@ FEATURE_LABELS = {
 RATIO_THRESHOLDS = (0.30, 0.70)
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data
 def load_data() -> pd.DataFrame:
-    project = os.environ["GCP_PROJECT"]
-    dataset = os.environ["GCP_DATASET_MARTS"]
-    client = bigquery.Client(project=project)
-    sql = f"SELECT * FROM `{project}.{dataset}.mart_geo_analytics`"
-    return client.query(sql).to_dataframe()
+    con = duckdb.connect(DB_PATH, read_only=True)
+    df = con.execute("SELECT * FROM marts.mart_geo_analytics").fetchdf()
+    con.close()
+    return df
 
 
 @st.cache_data

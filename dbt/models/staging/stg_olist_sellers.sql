@@ -6,7 +6,7 @@ deduped as (
     select
         md5(
             coalesce(seller_id,                  '') || '|' ||
-            coalesce(CAST(seller_zip_code_prefix AS STRING), '') || '|' ||
+            coalesce(seller_zip_code_prefix,     '') || '|' ||
             coalesce(seller_city,                '') || '|' ||
             coalesce(seller_state,               '')
         ) as row_hash,
