@@ -1,15 +1,17 @@
-.PHONY: pipeline ingest transform test streamlit setup-gcloud
+.PHONY: pipeline ingest transform test streamlit auth setup-gcloud
 
-setup-gcloud:
+auth:
 	gcloud auth login
 	gcloud auth application-default login
+
+setup-gcloud: auth
 	gcloud config set project data-pipeline-lab-497514
 	gcloud services list --enabled --filter="name:bigquery"
+	bq mk --dataset --if-not-exists --location=US data-pipeline-lab-497514:dataset_raw
+	bq mk --dataset --if-not-exists --location=US data-pipeline-lab-497514:dataset_staging
+	bq mk --dataset --if-not-exists --location=US data-pipeline-lab-497514:dataset_intermediate
+	bq mk --dataset --if-not-exists --location=US data-pipeline-lab-497514:dataset_marts
 	bq ls --project_id=data-pipeline-lab-497514
-	bq mk --dataset --location=US data-pipeline-lab-497514:dataset_raw
-	bq mk --dataset --location=US data-pipeline-lab-497514:dataset_staging
-	bq mk --dataset --location=US data-pipeline-lab-497514:dataset_intermediate
-	bq mk --dataset --location=US data-pipeline-lab-497514:dataset_marts
 
 pipeline: ingest transform test
 
