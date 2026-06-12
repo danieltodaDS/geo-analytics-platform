@@ -85,19 +85,17 @@ Exemplos:
 ### Datasets
 
 ```
-{ambiente}_{dominio}
+{dominio}
 ```
 
-| Dataset | Ambiente | Domínio |
-|---|---|---|
-| `prod_raw` | prod | raw |
-| `prod_staging` | prod | staging |
-| `prod_intermediate` | prod | intermediate |
-| `prod_marts` | prod | marts |
-| `dev_raw` | dev | raw |
-| `dev_staging` | dev | staging |
+| Dataset | Camada dbt |
+|---|---|
+| `raw` | raw |
+| `staging` | staging |
+| `intermediate` | intermediate |
+| `marts` | marts |
 
-Ambientes: `prod`, `dev`. Nunca criar dataset sem prefixo de ambiente.
+Isolamento por projeto GCP, não por prefixo de dataset. Um projeto GCP por ambiente se necessário.
 
 ### Tabelas e colunas
 

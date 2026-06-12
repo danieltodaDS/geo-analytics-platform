@@ -276,7 +276,7 @@ Documentação
 --- Preparação para remoto ---
 13. Provisionamento GCP (one-time, via gcloud):
     - Bucket GCS para Parquet raw
-    - Datasets BigQuery: dev_raw, dev_staging, dev_intermediate, dev_marts (prod_* em produção)
+    - Datasets BigQuery: raw, staging, intermediate, marts
     - Service account + Workload Identity Federation para GitHub Actions (ADR-009)
 14. Feature 8 — CI/CD GitHub Actions (ci.yml + ingest.yml)
 

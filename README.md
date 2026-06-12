@@ -51,10 +51,10 @@ gs://bucket/raw/{fonte}/year=X/month=X/day=X/data.parquet
                     ↓
 
 Warehouse — BigQuery
-├── dev_raw          ← carga direta do GCS, sem transformação
-├── dev_staging      ← limpeza, tipagem, geocodificação (dbt)
-├── dev_intermediate ← joins entre fontes, schema comum, regras de negócio (dbt)
-└── dev_marts        ← modelos finais prontos para consumo (dbt)
+├── raw          ← carga direta do GCS, sem transformação
+├── staging      ← limpeza, tipagem, geocodificação (dbt)
+├── intermediate ← joins entre fontes, schema comum, regras de negócio (dbt)
+└── marts        ← modelos finais prontos para consumo (dbt)
 
                     ↓
 

@@ -26,10 +26,10 @@ auth:
 setup-gcloud: auth
 	gcloud config set project <gcp_project>
 	gcloud services list --enabled --filter="name:bigquery"
-	bq mk --dataset --if-not-exists --location=US <gcp_project>:dev_raw
-	bq mk --dataset --if-not-exists --location=US <gcp_project>:dev_staging
-	bq mk --dataset --if-not-exists --location=US <gcp_project>:dev_intermediate
-	bq mk --dataset --if-not-exists --location=US <gcp_project>:dev_marts
+	bq mk --dataset --if-not-exists --location=US <gcp_project>:raw
+	bq mk --dataset --if-not-exists --location=US <gcp_project>:staging
+	bq mk --dataset --if-not-exists --location=US <gcp_project>:intermediate
+	bq mk --dataset --if-not-exists --location=US <gcp_project>:marts
 	bq ls --project_id=<gcp_project>
 
 pipeline: ingest transform test
@@ -52,7 +52,7 @@ streamlit:
 ```
 
 - `make auth` — renovação de token (sessão); `make setup-gcloud` — provisionamento one-time (inclui auth)
-- Datasets nomeados `{ambiente}_{domínio}` (`dev_raw`, `prod_raw`, etc.) conforme `conventions.md`
+- Datasets nomeados por camada (`raw`, `staging`, `intermediate`, `marts`) conforme `conventions.md`
 - `bq mk --if-not-exists` torna `setup-gcloud` idempotente — seguro de re-executar
 
 ## Justificativa
