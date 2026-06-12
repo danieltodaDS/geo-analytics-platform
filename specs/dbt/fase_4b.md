@@ -12,9 +12,10 @@
 O que muda:     Adapter dbt (dbt-duckdb → dbt-bigquery)
                 profiles.yml (DuckDB local → BigQuery OAuth)
                 _sources.yml (external_location → tabelas BigQuery)
-                4 modelos intermediate (débitos de dialeto SQL)
+                7 modelos staging (TRY_CAST → SAFE_CAST, ::cast → CAST)
+                5 modelos intermediate (débitos de dialeto SQL)
                 Streamlit (DuckDB → google-cloud-bigquery)
-                2 novas macros cross-db (compat_datediff, compat_mode)
+                3 macros cross-db (compat_datediff, compat_mode, normalize_city_name)
 
 O que NÃO muda: Parquets em data/raw/ — permanecem locais (GCS é fase 4c)
                 Lógica de negócio de todos os modelos
@@ -193,9 +194,103 @@ source('parquet_files', → source('raw',
 {% endmacro %}
 ```
 
+**`dbt/macros/normalize_city_name.sql`** (atualizar arquivo existente):
+
+```sql
+{% macro normalize_city_name(column) %}
+    {% if target.type == 'bigquery' %}
+        regexp_replace(
+          regexp_replace(regexp_replace(regexp_replace(regexp_replace(
+          regexp_replace(regexp_replace(
+            lower({{ column }}),
+            '[áàãâä]', 'a'),
+            '[éèêë]', 'e'),
+            '[íìîï]', 'i'),
+            '[óòõôö]', 'o'),
+            '[úùûü]', 'u'),
+            '[ç]', 'c'),
+          r'[ \-]', '_')
+    {% else %}
+        regexp_replace(
+          regexp_replace(regexp_replace(regexp_replace(regexp_replace(
+          regexp_replace(regexp_replace(
+            lower({{ column }}),
+            '[áàãâä]', 'a', 'g'),
+            '[éèêë]', 'e', 'g'),
+            '[íìîï]', 'i', 'g'),
+            '[óòõôö]', 'o', 'g'),
+            '[úùûü]', 'u', 'g'),
+            '[ç]', 'c', 'g'),
+          '[ \-]', '_', 'g')
+    {% endif %}
+{% endmacro %}
+```
+
+> BigQuery's `REGEXP_REPLACE` substitui todas as ocorrências por padrão — o flag `'g'` não existe e causaria erro. DuckDB exige o flag para substituição global.
+> Afeta 4 modelos intermediate: `int_ibge_municipios`, `int_olist_geolocation`, `int_dim_customers`, `int_dim_sellers`.
+
 ---
 
-### Passo 7 — Corrigir débitos de dialeto
+### Passo 7 — Corrigir débitos de dialeto — Staging
+
+#### `TRY_CAST` → `SAFE_CAST` (7 modelos)
+
+BigQuery não tem `TRY_CAST`. Substituição direta em todos os staging models:
+
+| DuckDB | BigQuery |
+|---|---|
+| `try_cast(x as integer)` | `SAFE_CAST(x AS INT64)` |
+| `try_cast(x as bigint)` | `SAFE_CAST(x AS INT64)` |
+| `try_cast(x as double)` | `SAFE_CAST(x AS FLOAT64)` |
+| `try_cast(x as timestamp)` | `SAFE_CAST(x AS TIMESTAMP)` |
+
+Modelos afetados e contagem:
+
+| Modelo | Ocorrências |
+|---|---|
+| `stg_olist_orders.sql` | 5 |
+| `stg_olist_order_reviews.sql` | 2 |
+| `stg_olist_order_items.sql` | 1 |
+| `stg_ibge_localidades.sql` | 2 |
+| `stg_ibge_censo_9936.sql` | 3 |
+| `stg_ibge_censo_10295.sql` | 3 |
+| `stg_ibge_censo_9514.sql` | 3 |
+
+#### Operador `::cast` → `CAST(x AS TYPE)` (7 staging + 1 intermediate)
+
+BigQuery não suporta o operador `::` de PostgreSQL/DuckDB. Aparece em dois contextos:
+
+**No `row_hash` (coalesce):**
+```sql
+-- antes
+coalesce(order_item_id::varchar, '')
+-- depois
+coalesce(CAST(order_item_id AS STRING), '')
+```
+
+**Em surrogate keys:**
+```sql
+-- antes
+order_id || '-' || order_item_id::varchar
+-- depois
+order_id || '-' || CAST(order_item_id AS STRING)
+```
+
+Mapeamento de tipos:
+
+| DuckDB | BigQuery |
+|---|---|
+| `::varchar` | `CAST(x AS STRING)` |
+| `::integer` | `CAST(x AS INT64)` |
+| `::bigint` | `CAST(x AS INT64)` |
+| `::double` | `CAST(x AS FLOAT64)` |
+| `::date` | `CAST(x AS DATE)` |
+
+Modelos afetados: `stg_ibge_localidades`, `stg_bcb_pix`, `stg_olist_order_items`, `stg_olist_order_payments`, `stg_olist_products`, `stg_olist_geolocation`, `stg_olist_order_reviews`, `int_bcb_pix_municipio` (já coberto no Passo 8 — a substituição de `strptime` elimina o `::varchar` da mesma linha).
+
+---
+
+### Passo 8 — Corrigir débitos de dialeto — Intermediate
 
 #### `dbt/models/intermediate/int_fact_orders.sql` — 3 ocorrências
 
@@ -281,7 +376,7 @@ PARSE_DATE('%Y%m', CAST(ano_mes AS STRING))  as ano_mes_data,
 
 ---
 
-### Passo 8 — Validação incremental
+### Passo 9 — Validação incremental
 
 Estratégia: validar modelo a modelo para controlar custo de queries.
 **Não rodar `dbt build` completo a cada iteração.**
@@ -318,7 +413,7 @@ uv run dbt build --profiles-dir .
 
 ---
 
-### Passo 9 — Migrar Streamlit
+### Passo 10 — Migrar Streamlit
 
 **Variáveis de ambiente necessárias** (adicionar ao `.env` ou exportar):
 
@@ -354,7 +449,23 @@ def load_data() -> pd.DataFrame:
 
 - `dbt build` completo sem erros ou falhas de teste
 - `make streamlit` carrega dados do BigQuery sem erro
-- Contagem de linhas dos marts igual à fase 4a (regressão zero)
+- Contagens de staging no BigQuery batem com os volumes conhecidos dos Parquets (fonte de verdade — não marts, que são derivados e podem mascarar erros de carga):
+
+```bash
+bq query --nouse_legacy_sql \
+  'SELECT COUNT(*) FROM `data-pipeline-lab-497514.staging.stg_olist_orders`'
+# Esperado: 99.441
+
+bq query --nouse_legacy_sql \
+  'SELECT COUNT(*) FROM `data-pipeline-lab-497514.staging.stg_bcb_pix`'
+# Esperado: ~378.663 (após dedup técnica)
+
+bq query --nouse_legacy_sql \
+  'SELECT COUNT(*) FROM `data-pipeline-lab-497514.staging.stg_ibge_localidades`'
+# Esperado: 5.571
+```
+
+> Volumes de referência em `docs/understanding/fase_4b.md` — seção 5.
 
 ---
 

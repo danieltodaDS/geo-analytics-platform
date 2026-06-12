@@ -1,4 +1,4 @@
-.PHONY: pipeline ingest transform test streamlit auth setup-gcloud
+.PHONY: pipeline ingest transform test streamlit auth setup-gcloud bq-load
 
 auth:
 	gcloud auth login
