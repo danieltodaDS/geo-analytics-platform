@@ -35,13 +35,14 @@ O que NÃO muda: Parquets em data/raw/ — permanecem locais (GCS é fase 4c)
 
 ## Sequência de implementação
 
-### Passo 1 — Tag fase 4a
+### Passo 0 — Branch e tag
 
 ```bash
+git checkout -b feat/fase-4b-bigquery
 git tag v0.1-fase-4a
 ```
 
-Ponto de retorno seguro antes de qualquer alteração.
+A branch isola o trabalho em progresso do `main` durante as múltiplas etapas destrutivas (remoção do adapter, ~20 arquivos editados). A tag marca o estado final da fase 4a como ponto de retorno seguro.
 
 ---
 
