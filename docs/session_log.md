@@ -196,7 +196,7 @@
 - `make setup-gcloud` adicionado ao Makefile com sequência completa de setup local
 - `exploration/fase_4b_exploration.ipynb` criado e executado: schemas mapeados, 4 débitos de dialeto identificados, opções de conector Streamlit avaliadas
 
-**Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Explorar — notebook fase_4b_exploration.ipynb concluído
-**Em andamento:** Features 4–6 — dbt (fase 4b) — Entender — docs/understanding/fase_4b.md não iniciado
+**Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Entender — docs/understanding/fase_4b.md criado e aprovado pelo Validador
+**Em andamento:** Features 4–6 — dbt (fase 4b) — Especificar — specs/dbt/fase_4b.md não iniciado
 
 ---
