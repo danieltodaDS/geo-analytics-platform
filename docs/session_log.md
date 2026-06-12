@@ -235,14 +235,15 @@
 **Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Especificar — spec corrigida e aprovada pelo Validador
 **Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — pré-condições pendentes antes de iniciar
 
-**Pré-condições obrigatórias antes da reimplementação (executar nesta ordem):**
-1. Dropar todos os datasets BQ incorretos:
-   `bq rm -r -f data-pipeline-lab-497514:raw`
-   `bq rm -r -f data-pipeline-lab-497514:raw_views`
-   `bq rm -r -f data-pipeline-lab-497514:staging`
-   `bq rm -r -f data-pipeline-lab-497514:intermediate`
-   `bq rm -r -f data-pipeline-lab-497514:marts`
-2. Recriar datasets limpos + criar `landing`: `make setup-gcloud` (após atualizar o Makefile para incluir `landing`)
-3. Seguir spec `specs/dbt/fase_4b.md` do Passo 1 ao 11
+**2026-06-12 (continuação 3)**
+- Datasets BQ dropados: `raw`, `raw_views`, `staging`, `intermediate`, `marts`
+- 5 datasets limpos recriados: `landing`, `raw`, `staging`, `intermediate`, `marts` (location=US)
+- Makefile: `landing` adicionado ao `setup-gcloud`; `--if-not-exists` removido (flag não suportado na versão bq instalada)
+
+- Makefile: `bq-load` rule adicionada (13 tabelas → `landing`); 13/13 cargas OK; volumes confirmados
+- Volumes landing: bcb_pix=378.663, ibge_localidades=5.571, olist_orders=99.441 (batem com fase 4a)
+
+**Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Produtizar — `make bq-load` executado, 13 tabelas em `landing` com volumes corretos (Passo 4 da spec concluído)
+**Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — Passos 3, 5, 6, 7, 8, 9, 10, 11 da spec ainda pendentes
 
 ---
