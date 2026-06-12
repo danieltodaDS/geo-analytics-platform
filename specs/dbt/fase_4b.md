@@ -11,9 +11,12 @@
 ```
 O que muda:     Adapter dbt (dbt-duckdb → dbt-bigquery)
                 profiles.yml (DuckDB local → BigQuery OAuth)
-                _sources.yml (external_location → tabelas BigQuery)
+                _sources.yml (parquet_files external → dataset landing no BigQuery)
+                Dataset landing criado no BigQuery (zona de ingestão / datalake local)
+                make bq-load: 13 Parquets carregados em landing.*
                 7 modelos staging (TRY_CAST → SAFE_CAST, ::cast → CAST)
                 5 modelos intermediate (débitos de dialeto SQL)
+                Marts (cast as double → CAST AS FLOAT64)
                 Streamlit (DuckDB → google-cloud-bigquery)
                 3 macros cross-db (compat_datediff, compat_mode, normalize_city_name)
 
@@ -63,27 +66,25 @@ O `landing` é uma **zona de ingestão temporária** — dados brutos chegam aqu
 
 ### Transição para fase 4c
 
-Na fase 4c, os Parquets migram para GCS. O BigQuery passa a lê-los via **External Tables** apontando para o GCS — sem `bq load`, sem materialização local.
+Na fase 4c, os Parquets migram para GCS (o bucket é o datalake definitivo). O `bq load` local deixa de existir. No lugar das tabelas físicas, o dataset `landing` passa a conter **External Tables** apontando para o bucket GCS — mesmos nomes de tabela, mesmo schema, mesmo dataset.
 
 ```
-GCS (gs://bucket/raw/**/*.parquet)   ← datalake remoto, imutável
-        ↓ BigQuery External Table
-raw.olist_customers  (VIEW dbt sobre External Table)
+GCS gs://bucket/landing/**/*.parquet   ← datalake remoto, imutável
+        ↓ BigQuery External Table (landing.olist_customers, landing.olist_orders, ...)
+landing.olist_customers  (EXTERNAL TABLE — substitui a TABLE do bq load)
+        ↓ source('landing', ...)
+raw.olist_customers      (VIEW dbt — inalterada)
         ↓ ref('olist_customers')
 staging.stg_olist_customers
 ```
 
-O dataset `landing` deixa de existir. O contrato do `raw` não muda — só muda o que a source aponta. Staging, intermediate e marts: zero alteração.
-
-### Estado atual (workaround — a corrigir)
-
-A implementação inicial desta fase usou `bq load → raw.*` e criou um dataset adicional `raw_views` para hospedar as views dbt, evitando o conflito. Esse workaround **viola o contrato da raw layer** (que deve ser view sobre o datalake, não sobre tabelas físicas no mesmo dataset) e **deve ser corrigido** pela sequência de implementação abaixo.
+Como os nomes de tabela no dataset `landing` não mudam, `_sources.yml` e todos os raw models permanecem **inalterados** na transição 4b → 4c. Staging, intermediate e marts: zero alteração. A única mudança é substituir as tabelas físicas do `landing` por External Tables no GCS.
 
 ---
 
 ## Sequência de implementação
 
-### Passo 0 — Branch e tag
+### Passo 1 — Branch e tag
 
 ```bash
 git checkout -b feat/fase-4b-bigquery
@@ -94,7 +95,19 @@ A branch isola o trabalho em progresso do `main` durante as múltiplas etapas de
 
 ---
 
-### Passo 2 — Troca de adapter e dependências
+### Passo 2 — Criar dataset `landing` no BigQuery
+
+```bash
+bq mk --dataset --location=US data-pipeline-lab-497514:landing
+```
+
+O dataset `landing` é a zona de ingestão / datalake local da fase 4b. Os datasets `raw`, `staging`, `intermediate` e `marts` já existem do `make setup-gcloud`.
+
+> Atualizar `make setup-gcloud` no Makefile para incluir a criação do dataset `landing`.
+
+---
+
+### Passo 3 — Troca de adapter e dependências
 
 ```bash
 uv remove dbt-duckdb
@@ -103,11 +116,11 @@ uv add google-cloud-bigquery
 ```
 
 > Após este passo, `dbt run` contra o profile DuckDB existente quebra — esperado.
-> Não executar `dbt` até o profiles.yml estar atualizado (Passo 4).
+> Não executar `dbt` até o profiles.yml estar atualizado (Passo 5).
 
 ---
 
-### Passo 3 — Carga dos Parquets no BigQuery (`make bq-load`)
+### Passo 4 — Carga dos Parquets no BigQuery (`make bq-load`)
 
 Destino: dataset `landing` — zona de ingestão fora do controle do dbt.
 Ver decisão arquitetural acima para o racional.
@@ -154,7 +167,7 @@ Confirmar que `microrregiao_id` e `mesorregiao_id` foram inferidos como `FLOAT64
 
 ---
 
-### Passo 4 — Atualizar `dbt/profiles.yml`
+### Passo 5 — Atualizar `dbt/profiles.yml`
 
 Substituir conteúdo completo:
 
@@ -179,7 +192,7 @@ cd dbt && uv run dbt debug --profiles-dir .
 
 ---
 
-### Passo 5 — Atualizar `dbt/models/raw/_sources.yml`
+### Passo 6 — Atualizar `dbt/models/raw/_sources.yml`
 
 A source aponta para o dataset `landing` (tabelas físicas do `bq load`).
 O dataset `raw` continua sendo gerenciado pelo dbt como camada de views.
@@ -209,9 +222,9 @@ sources:
       - name: bcb_pix
 ```
 
-### Passo 5b — Atualizar referências nos modelos raw
+### Passo 6b — Atualizar referências nos modelos raw
 
-Todos os 13 arquivos em `dbt/models/raw/*.sql` referenciam `source('parquet_files', ...)`.
+Todos os 13 arquivos em `dbt/models/raw/*.sql` referenciam `source('parquet_files', ...)` (estado da fase 4a).
 Substituir globalmente:
 
 ```
@@ -220,7 +233,7 @@ source('parquet_files', → source('landing',
 
 ---
 
-### Passo 6 — Criar macros cross-db
+### Passo 7 — Criar macros cross-db
 
 **`dbt/macros/compat_datediff.sql`** (novo arquivo):
 
@@ -286,7 +299,7 @@ source('parquet_files', → source('landing',
 
 ---
 
-### Passo 7 — Corrigir débitos de dialeto — Staging
+### Passo 8 — Corrigir débitos de dialeto — Staging
 
 #### `TRY_CAST` → `SAFE_CAST` (7 modelos)
 
@@ -345,7 +358,7 @@ Modelos afetados: `stg_ibge_localidades`, `stg_bcb_pix`, `stg_olist_order_items`
 
 ---
 
-### Passo 8 — Corrigir débitos de dialeto — Intermediate
+### Passo 9 — Corrigir débitos de dialeto — Intermediate
 
 #### `dbt/models/intermediate/int_fact_orders.sql` — 3 ocorrências
 
@@ -431,7 +444,7 @@ PARSE_DATE('%Y%m', CAST(ano_mes AS STRING))  as ano_mes_data,
 
 ---
 
-### Passo 9 — Validação incremental
+### Passo 10 — Validação incremental
 
 Estratégia: validar modelo a modelo para controlar custo de queries.
 **Não rodar `dbt build` completo a cada iteração.**
@@ -468,7 +481,7 @@ uv run dbt build --profiles-dir .
 
 ---
 
-### Passo 10 — Migrar Streamlit
+### Passo 11 — Migrar Streamlit
 
 **Variáveis de ambiente necessárias** (adicionar ao `.env` ou exportar):
 
