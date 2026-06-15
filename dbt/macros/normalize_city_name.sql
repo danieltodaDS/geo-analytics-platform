@@ -1,13 +1,27 @@
 {% macro normalize_city_name(column) %}
-regexp_replace(
-  regexp_replace(regexp_replace(regexp_replace(regexp_replace(
-  regexp_replace(regexp_replace(
-    lower({{ column }}),
-    '[áàãâä]', 'a', 'g'),
-    '[éèêë]', 'e', 'g'),
-    '[íìîï]', 'i', 'g'),
-    '[óòõôö]', 'o', 'g'),
-    '[úùûü]', 'u', 'g'),
-    '[ç]', 'c', 'g'),
-  '[ \-]', '_', 'g')
+    {% if target.type == 'bigquery' %}
+        regexp_replace(
+          regexp_replace(regexp_replace(regexp_replace(regexp_replace(
+          regexp_replace(regexp_replace(
+            lower({{ column }}),
+            '[áàãâä]', 'a'),
+            '[éèêë]', 'e'),
+            '[íìîï]', 'i'),
+            '[óòõôö]', 'o'),
+            '[úùûü]', 'u'),
+            '[ç]', 'c'),
+          r'[ \-]', '_')
+    {% else %}
+        regexp_replace(
+          regexp_replace(regexp_replace(regexp_replace(regexp_replace(
+          regexp_replace(regexp_replace(
+            lower({{ column }}),
+            '[áàãâä]', 'a', 'g'),
+            '[éèêë]', 'e', 'g'),
+            '[íìîï]', 'i', 'g'),
+            '[óòõôö]', 'o', 'g'),
+            '[úùûü]', 'u', 'g'),
+            '[ç]', 'c', 'g'),
+          '[ \-]', '_', 'g')
+    {% endif %}
 {% endmacro %}

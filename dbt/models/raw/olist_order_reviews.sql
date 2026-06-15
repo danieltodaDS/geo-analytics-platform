@@ -1,1 +1,1 @@
-select * from {{ source('parquet_files', 'olist_order_reviews') }}
+select * from {{ source('landing', 'olist_order_reviews') }}

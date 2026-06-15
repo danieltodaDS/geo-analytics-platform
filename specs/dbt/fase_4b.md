@@ -11,9 +11,12 @@
 ```
 O que muda:     Adapter dbt (dbt-duckdb → dbt-bigquery)
                 profiles.yml (DuckDB local → BigQuery OAuth)
-                _sources.yml (external_location → tabelas BigQuery)
+                _sources.yml (parquet_files external → dataset landing no BigQuery)
+                Dataset landing criado no BigQuery (zona de ingestão / datalake local)
+                make bq-load: 13 Parquets carregados em landing.*
                 7 modelos staging (TRY_CAST → SAFE_CAST, ::cast → CAST)
                 5 modelos intermediate (débitos de dialeto SQL)
+                Marts (cast as double → CAST AS FLOAT64)
                 Streamlit (DuckDB → google-cloud-bigquery)
                 3 macros cross-db (compat_datediff, compat_mode, normalize_city_name)
 
@@ -27,25 +30,84 @@ O que NÃO muda: Parquets em data/raw/ — permanecem locais (GCS é fase 4c)
 
 ## Pré-requisitos
 
-- Datasets BigQuery criados: `raw`, `staging`, `intermediate`, `marts` (`make setup-gcloud` executado)
+- Datasets BigQuery criados: `landing`, `raw`, `staging`, `intermediate`, `marts` (`make setup-gcloud` executado)
 - ADC autenticada: `make auth`
 - Parquets em `data/raw/` completos (ingestão fase 4a concluída)
 
 ---
 
-## Sequência de implementação
+## Arquitetura de datasets — decisão e rationale
 
-### Passo 1 — Tag fase 4a
+### O problema do namespace compartilhado
 
-```bash
-git tag v0.1-fase-4a
+Em DuckDB (fase 4a), a raw layer é um conjunto de VIEWs que leem diretamente dos Parquets via `read_parquet(...)`. O "datalake" é o **filesystem** — existe fora de qualquer namespace SQL. Não há conflito possível entre a source e a view dbt que a consome.
+
+```
+filesystem (data/raw/**/*.parquet)   ← fora do namespace DuckDB
+        ↓ read_parquet
+raw.olist_customers  (VIEW dbt)      ← namespace DuckDB
 ```
 
-Ponto de retorno seguro antes de qualquer alteração.
+No BigQuery, não existe filesystem acessível ao engine. Para que o dbt leia os Parquets, é preciso carregá-los via `bq load` — que cria **tabelas físicas dentro de um dataset BigQuery**. Se esse dataset for `raw`, as tabelas (`raw.olist_customers`) colidem com as views dbt (`raw.olist_customers`) no mesmo namespace.
+
+### Decisão: dataset `landing` como zona de ingestão
+
+O `bq load` carrega os Parquets no dataset `landing`. O dataset `raw` continua sendo gerenciado exclusivamente pelo dbt como camada de VIEWs — exatamente o mesmo papel que tinha no DuckDB.
+
+```
+landing.olist_customers  (TABLE — bq load, fora do dbt)
+        ↓ source('landing', ...)
+raw.olist_customers      (VIEW dbt — espelho fiel, sem transformação)
+        ↓ ref('olist_customers')
+staging.stg_olist_customers  (TABLE dbt)
+```
+
+O `landing` é uma **zona de ingestão temporária** — dados brutos chegam aqui antes de qualquer modelagem. O `raw` mantém seu contrato: view que espelha o datalake, zero transformação.
+
+### Transição para fase 4c
+
+Na fase 4c, os Parquets migram para GCS (o bucket é o datalake definitivo). O `bq load` local deixa de existir. No lugar das tabelas físicas, o dataset `landing` passa a conter **External Tables** apontando para o bucket GCS — mesmos nomes de tabela, mesmo schema, mesmo dataset.
+
+```
+GCS gs://bucket/landing/**/*.parquet   ← datalake remoto, imutável
+        ↓ BigQuery External Table (landing.olist_customers, landing.olist_orders, ...)
+landing.olist_customers  (EXTERNAL TABLE — substitui a TABLE do bq load)
+        ↓ source('landing', ...)
+raw.olist_customers      (VIEW dbt — inalterada)
+        ↓ ref('olist_customers')
+staging.stg_olist_customers
+```
+
+Como os nomes de tabela no dataset `landing` não mudam, `_sources.yml` e todos os raw models permanecem **inalterados** na transição 4b → 4c. Staging, intermediate e marts: zero alteração. A única mudança é substituir as tabelas físicas do `landing` por External Tables no GCS.
 
 ---
 
-### Passo 2 — Troca de adapter e dependências
+## Sequência de implementação
+
+### Passo 1 — Branch e tag
+
+```bash
+git checkout -b feat/fase-4b-bigquery
+git tag v0.1-fase-4a
+```
+
+A branch isola o trabalho em progresso do `main` durante as múltiplas etapas destrutivas (remoção do adapter, ~20 arquivos editados). A tag marca o estado final da fase 4a como ponto de retorno seguro.
+
+---
+
+### Passo 2 — Criar dataset `landing` no BigQuery
+
+```bash
+bq mk --dataset --location=US data-pipeline-lab-497514:landing
+```
+
+O dataset `landing` é a zona de ingestão / datalake local da fase 4b. Os datasets `raw`, `staging`, `intermediate` e `marts` já existem do `make setup-gcloud`.
+
+> Atualizar `make setup-gcloud` no Makefile para incluir a criação do dataset `landing`.
+
+---
+
+### Passo 3 — Troca de adapter e dependências
 
 ```bash
 uv remove dbt-duckdb
@@ -54,41 +116,44 @@ uv add google-cloud-bigquery
 ```
 
 > Após este passo, `dbt run` contra o profile DuckDB existente quebra — esperado.
-> Não executar `dbt` até o profiles.yml estar atualizado (Passo 4).
+> Não executar `dbt` até o profiles.yml estar atualizado (Passo 5).
 
 ---
 
-### Passo 3 — Carga dos Parquets no BigQuery (`make bq-load`)
+### Passo 4 — Carga dos Parquets no BigQuery (`make bq-load`)
+
+Destino: dataset `landing` — zona de ingestão fora do controle do dbt.
+Ver decisão arquitetural acima para o racional.
 
 Adicionar target ao Makefile:
 
 ```makefile
 bq-load:
-	bq load --replace --autodetect --source_format=PARQUET raw.olist_customers \
+	bq load --replace --autodetect --source_format=PARQUET landing.olist_customers \
 		$(shell find data/raw/olist_customers -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.olist_orders \
+	bq load --replace --autodetect --source_format=PARQUET landing.olist_orders \
 		$(shell find data/raw/olist_orders -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.olist_order_items \
+	bq load --replace --autodetect --source_format=PARQUET landing.olist_order_items \
 		$(shell find data/raw/olist_order_items -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.olist_order_payments \
+	bq load --replace --autodetect --source_format=PARQUET landing.olist_order_payments \
 		$(shell find data/raw/olist_order_payments -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.olist_order_reviews \
+	bq load --replace --autodetect --source_format=PARQUET landing.olist_order_reviews \
 		$(shell find data/raw/olist_order_reviews -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.olist_geolocation \
+	bq load --replace --autodetect --source_format=PARQUET landing.olist_geolocation \
 		$(shell find data/raw/olist_geolocation -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.olist_products \
+	bq load --replace --autodetect --source_format=PARQUET landing.olist_products \
 		$(shell find data/raw/olist_products -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.olist_sellers \
+	bq load --replace --autodetect --source_format=PARQUET landing.olist_sellers \
 		$(shell find data/raw/olist_sellers -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.ibge_localidades \
+	bq load --replace --autodetect --source_format=PARQUET landing.ibge_localidades \
 		$(shell find data/raw/ibge_localidades -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.ibge_censo_9936 \
+	bq load --replace --autodetect --source_format=PARQUET landing.ibge_censo_9936 \
 		$(shell find data/raw/ibge_censo_9936 -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.ibge_censo_10295 \
+	bq load --replace --autodetect --source_format=PARQUET landing.ibge_censo_10295 \
 		$(shell find data/raw/ibge_censo_10295 -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.ibge_censo_9514 \
+	bq load --replace --autodetect --source_format=PARQUET landing.ibge_censo_9514 \
 		$(shell find data/raw/ibge_censo_9514 -name "*.parquet")
-	bq load --replace --autodetect --source_format=PARQUET raw.bcb_pix \
+	bq load --replace --autodetect --source_format=PARQUET landing.bcb_pix \
 		$(shell find data/raw/bcb_pix -name "*.parquet")
 ```
 
@@ -96,13 +161,13 @@ bq-load:
 
 **Verificação pós-carga obrigatória para IBGE:**
 ```bash
-bq show raw.ibge_localidades
+bq show landing.ibge_localidades
 ```
 Confirmar que `microrregiao_id` e `mesorregiao_id` foram inferidos como `FLOAT64` (aceitável — staging faz cast para `INT64`).
 
 ---
 
-### Passo 4 — Atualizar `dbt/profiles.yml`
+### Passo 5 — Atualizar `dbt/profiles.yml`
 
 Substituir conteúdo completo:
 
@@ -114,7 +179,7 @@ geo_analytics:
       type: bigquery
       method: oauth
       project: data-pipeline-lab-497514
-      dataset: raw   # placeholder obrigatório pelo adapter — sobrescrito por generate_schema_name.sql
+      dataset: landing   # placeholder obrigatório pelo adapter — sobrescrito por generate_schema_name.sql
       location: US
       threads: 4
       timeout_seconds: 300
@@ -127,7 +192,10 @@ cd dbt && uv run dbt debug --profiles-dir .
 
 ---
 
-### Passo 5 — Atualizar `dbt/models/raw/_sources.yml`
+### Passo 6 — Atualizar `dbt/models/raw/_sources.yml`
+
+A source aponta para o dataset `landing` (tabelas físicas do `bq load`).
+O dataset `raw` continua sendo gerenciado pelo dbt como camada de views.
 
 Substituir conteúdo completo:
 
@@ -135,9 +203,9 @@ Substituir conteúdo completo:
 version: 2
 
 sources:
-  - name: raw
+  - name: landing
     database: data-pipeline-lab-497514
-    schema: raw
+    schema: landing
     tables:
       - name: olist_customers
       - name: olist_orders
@@ -154,18 +222,18 @@ sources:
       - name: bcb_pix
 ```
 
-### Passo 5b — Atualizar referências nos modelos raw
+### Passo 6b — Atualizar referências nos modelos raw
 
-Todos os 13 arquivos em `dbt/models/raw/*.sql` referenciam `source('parquet_files', ...)`.
+Todos os 13 arquivos em `dbt/models/raw/*.sql` referenciam `source('parquet_files', ...)` (estado da fase 4a).
 Substituir globalmente:
 
 ```
-source('parquet_files', → source('raw',
+source('parquet_files', → source('landing',
 ```
 
 ---
 
-### Passo 6 — Criar macros cross-db
+### Passo 7 — Criar macros cross-db
 
 **`dbt/macros/compat_datediff.sql`** (novo arquivo):
 
@@ -231,7 +299,7 @@ source('parquet_files', → source('raw',
 
 ---
 
-### Passo 7 — Corrigir débitos de dialeto — Staging
+### Passo 8 — Corrigir débitos de dialeto — Staging
 
 #### `TRY_CAST` → `SAFE_CAST` (7 modelos)
 
@@ -290,7 +358,7 @@ Modelos afetados: `stg_ibge_localidades`, `stg_bcb_pix`, `stg_olist_order_items`
 
 ---
 
-### Passo 8 — Corrigir débitos de dialeto — Intermediate
+### Passo 9 — Corrigir débitos de dialeto — Intermediate
 
 #### `dbt/models/intermediate/int_fact_orders.sql` — 3 ocorrências
 
@@ -376,7 +444,7 @@ PARSE_DATE('%Y%m', CAST(ano_mes AS STRING))  as ano_mes_data,
 
 ---
 
-### Passo 9 — Validação incremental
+### Passo 10 — Validação incremental
 
 Estratégia: validar modelo a modelo para controlar custo de queries.
 **Não rodar `dbt build` completo a cada iteração.**
@@ -413,7 +481,7 @@ uv run dbt build --profiles-dir .
 
 ---
 
-### Passo 10 — Migrar Streamlit
+### Passo 11 — Migrar Streamlit
 
 **Variáveis de ambiente necessárias** (adicionar ao `.env` ou exportar):
 

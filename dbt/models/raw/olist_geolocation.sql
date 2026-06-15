@@ -1,1 +1,1 @@
-select * from {{ source('parquet_files', 'olist_geolocation') }}
+select * from {{ source('landing', 'olist_geolocation') }}

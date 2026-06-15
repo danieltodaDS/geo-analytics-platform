@@ -7,7 +7,7 @@ deduped as (
         md5(
             coalesce(customer_id,               '') || '|' ||
             coalesce(customer_unique_id,         '') || '|' ||
-            coalesce(customer_zip_code_prefix,   '') || '|' ||
+            coalesce(CAST(customer_zip_code_prefix AS STRING),   '') || '|' ||
             coalesce(customer_city,              '') || '|' ||
             coalesce(customer_state,             '')
         ) as row_hash,

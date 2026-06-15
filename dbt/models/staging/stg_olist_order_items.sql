@@ -5,13 +5,13 @@ with source as (
 deduped as (
     select
         md5(
-            coalesce(order_id,                       '') || '|' ||
-            coalesce(order_item_id::varchar,         '') || '|' ||
-            coalesce(product_id,                     '') || '|' ||
-            coalesce(seller_id,                      '') || '|' ||
-            coalesce(shipping_limit_date,            '') || '|' ||
-            coalesce(price::varchar,                 '') || '|' ||
-            coalesce(freight_value::varchar,         '')
+            coalesce(order_id,                           '') || '|' ||
+            coalesce(CAST(order_item_id AS STRING),      '') || '|' ||
+            coalesce(product_id,                         '') || '|' ||
+            coalesce(seller_id,                          '') || '|' ||
+            coalesce(shipping_limit_date,                '') || '|' ||
+            coalesce(CAST(price AS STRING),              '') || '|' ||
+            coalesce(CAST(freight_value AS STRING),      '')
         ) as row_hash,
         *
     from source
@@ -20,12 +20,12 @@ deduped as (
 
 select
     row_hash,
-    order_id || '-' || order_item_id::varchar        as order_item_pk,
+    order_id || '-' || CAST(order_item_id AS STRING)  as order_item_pk,
     order_id,
     order_item_id,
     product_id,
     seller_id,
-    try_cast(shipping_limit_date as timestamp)       as shipping_limit_date,
+    SAFE_CAST(shipping_limit_date AS TIMESTAMP)        as shipping_limit_date,
     price,
     freight_value
 from deduped

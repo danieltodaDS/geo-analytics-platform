@@ -211,3 +211,51 @@
 **Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — não iniciada
 
 ---
+
+**2026-06-12 (continuação)**
+- Adapter trocado: dbt-duckdb → dbt-bigquery 1.11.1; google-cloud-bigquery adicionado
+- 13 Parquets carregados no BigQuery (raw dataset) via `make bq-load`; volumes OK
+- dbt raw layer movido para dataset `raw_views` (evita conflito de nomes com bq load)
+- Macros cross-db criadas: `compat_datediff`, `compat_mode`, `normalize_city_name` (BQ/DuckDB)
+- Staging: TRY_CAST→SAFE_CAST, ::cast→CAST, COALESCE tipado (13 modelos); Intermediate: 5 débitos corrigidos; Marts: double→FLOAT64
+- Streamlit migrado: duckdb→google-cloud-bigquery, cache_data(ttl=3600)
+- Build completo: 186/186 testes passando; volumes staging OK (99.441 / 378.663 / 5.571)
+
+**Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Produtizar — 186/186 testes passando, volumes confirmados
+**Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — Streamlit não testado (pendente `make streamlit`)
+
+---
+
+**2026-06-12 (continuação 2)**
+- Decisão arquitetural: dataset `landing` como zona de ingestão (bq load); `raw` = views dbt sobre landing — preserva contrato da fase 4a
+- Spec fase_4b.md corrigida: landing como datalake, transição 4c via External Tables no mesmo dataset landing, numeração 1–11
+- Revert da implementação incorreta (raw_views workaround): 44 arquivos restaurados para estado v0.1-fase-4a
+- profiles.yml restaurado para DuckDB; BQ BigQuery datasets a limpar antes da reimplementação
+
+**Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Especificar — spec corrigida e aprovada pelo Validador
+**Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — pré-condições pendentes antes de iniciar
+
+**2026-06-12 (continuação 3)**
+- Datasets BQ dropados: `raw`, `raw_views`, `staging`, `intermediate`, `marts`
+- 5 datasets limpos recriados: `landing`, `raw`, `staging`, `intermediate`, `marts` (location=US)
+- Makefile: `landing` adicionado ao `setup-gcloud`; `--if-not-exists` removido (flag não suportado na versão bq instalada)
+
+- Makefile: `bq-load` rule adicionada (13 tabelas → `landing`); 13/13 cargas OK; volumes confirmados
+- Volumes landing: bcb_pix=378.663, ibge_localidades=5.571, olist_orders=99.441 (batem com fase 4a)
+
+**Última etapa concluída:** Features 4–6 — dbt (fase 4b) — Produtizar — `make bq-load` executado, 13 tabelas em `landing` com volumes corretos (Passo 4 da spec concluído)
+**Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — Passos 3, 5, 6, 7, 8, 9, 10, 11 da spec ainda pendentes
+
+---
+
+**2026-06-15**
+- Passos 3–11 da spec fase_4b executados: adapter trocado (dbt-duckdb→dbt-bigquery 1.11.1), profiles.yml migrado, _sources.yml + 13 raw models atualizados (parquet_files→landing)
+- 3 macros cross-db criadas/atualizadas: `compat_datediff`, `compat_mode`, `normalize_city_name`
+- Staging: TRY_CAST→SAFE_CAST, ::cast→CAST (11 modelos); fix extra zip_code_prefix INT64 (3 modelos não mapeados na spec); Marts: double→FLOAT64 (3 modelos)
+- Intermediate: datediff→macro, mode→macro, FILTER WHERE→IF, strptime→PARSE_DATE; 186/186 testes passando
+- Pós-validação: `_staging.yml` meta→config (13 modelos, deprecação dbt resolvida); Makefile `include .env`; Streamlit migrado (duckdb→BigQuery, `make streamlit` OK)
+
+**Última etapa concluída:** Features 4–6 + Streamlit — fase 4b — Produtizar — 186/186 testes, `make streamlit` OK, fase 4b completa
+**Em andamento:** Features 4–6 + Streamlit — fase 4c — não iniciada (GitHub Actions + GCS + BigQuery remoto)
+
+---
