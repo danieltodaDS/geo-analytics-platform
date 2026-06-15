@@ -51,17 +51,17 @@ joined as (
         c.customer_zip_code_prefix,
         c.customer_state,
         c.customer_city,
-        g.geolocation_lat                                                               as customer_lat,
-        g.geolocation_lng                                                               as customer_lng,
+        g.geolocation_lat                                                                        as customer_lat,
+        g.geolocation_lng                                                                        as customer_lng,
 
         -- delivery metrics
-        datediff('day', o.order_purchase_timestamp, o.order_approved_at)               as approval_days,
-        datediff('day', o.order_purchase_timestamp, o.order_estimated_delivery_date)   as estimated_delivery_days,
-        datediff('day', o.order_purchase_timestamp, o.order_delivered_customer_date)   as delivery_days,
+        {{ compat_datediff('DAY', 'o.order_purchase_timestamp', 'o.order_approved_at') }}            as approval_days,
+        {{ compat_datediff('DAY', 'o.order_purchase_timestamp', 'o.order_estimated_delivery_date') }} as estimated_delivery_days,
+        {{ compat_datediff('DAY', 'o.order_purchase_timestamp', 'o.order_delivered_customer_date') }} as delivery_days,
         case
             when o.order_delivered_customer_date is null then null
             else o.order_delivered_customer_date <= o.order_estimated_delivery_date
-        end                                                                             as is_on_time,
+        end                                                                                      as is_on_time,
 
         -- payments
         p.total_payment_value,

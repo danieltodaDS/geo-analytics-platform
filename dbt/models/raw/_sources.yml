@@ -1,57 +1,20 @@
 version: 2
 
 sources:
-  - name: parquet_files
-    description: Parquets gerados pela camada de ingestão em data/raw/ (Phase 4a local).
+  - name: landing
+    database: data-pipeline-lab-497514
+    schema: landing
     tables:
       - name: olist_customers
-        meta:
-          external_location: "read_parquet('../data/raw/olist_customers/**/*.parquet')"
-
       - name: olist_orders
-        meta:
-          external_location: "read_parquet('../data/raw/olist_orders/**/*.parquet')"
-
       - name: olist_order_items
-        meta:
-          external_location: "read_parquet('../data/raw/olist_order_items/**/*.parquet')"
-
       - name: olist_order_payments
-        meta:
-          external_location: "read_parquet('../data/raw/olist_order_payments/**/*.parquet')"
-
       - name: olist_order_reviews
-        meta:
-          external_location: "read_parquet('../data/raw/olist_order_reviews/**/*.parquet')"
-
       - name: olist_geolocation
-        meta:
-          external_location: "read_parquet('../data/raw/olist_geolocation/**/*.parquet')"
-
       - name: olist_products
-        meta:
-          external_location: "read_parquet('../data/raw/olist_products/**/*.parquet')"
-
       - name: olist_sellers
-        meta:
-          external_location: "read_parquet('../data/raw/olist_sellers/**/*.parquet')"
-
       - name: ibge_localidades
-        meta:
-          external_location: "read_parquet('../data/raw/ibge_localidades/**/*.parquet')"
-
       - name: ibge_censo_9936
-        meta:
-          external_location: "read_parquet('../data/raw/ibge_censo_9936/**/*.parquet')"
-
       - name: ibge_censo_10295
-        meta:
-          external_location: "read_parquet('../data/raw/ibge_censo_10295/**/*.parquet')"
-
       - name: ibge_censo_9514
-        meta:
-          external_location: "read_parquet('../data/raw/ibge_censo_9514/**/*.parquet')"
-
       - name: bcb_pix
-        meta:
-          external_location: "read_parquet('../data/raw/bcb_pix/**/*.parquet')"

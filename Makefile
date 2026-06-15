@@ -1,3 +1,8 @@
+ifneq (,$(wildcard .env))
+include .env
+export
+endif
+
 .PHONY: pipeline ingest transform test streamlit auth setup-gcloud bq-load
 
 auth:

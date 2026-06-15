@@ -1,1 +1,1 @@
-select * from {{ source('parquet_files', 'ibge_localidades') }}
+select * from {{ source('landing', 'ibge_localidades') }}

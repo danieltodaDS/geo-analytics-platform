@@ -247,3 +247,15 @@
 **Em andamento:** Features 4–6 — dbt (fase 4b) — Produtizar — Passos 3, 5, 6, 7, 8, 9, 10, 11 da spec ainda pendentes
 
 ---
+
+**2026-06-15**
+- Passos 3–11 da spec fase_4b executados: adapter trocado (dbt-duckdb→dbt-bigquery 1.11.1), profiles.yml migrado, _sources.yml + 13 raw models atualizados (parquet_files→landing)
+- 3 macros cross-db criadas/atualizadas: `compat_datediff`, `compat_mode`, `normalize_city_name`
+- Staging: TRY_CAST→SAFE_CAST, ::cast→CAST (11 modelos); fix extra zip_code_prefix INT64 (3 modelos não mapeados na spec); Marts: double→FLOAT64 (3 modelos)
+- Intermediate: datediff→macro, mode→macro, FILTER WHERE→IF, strptime→PARSE_DATE; 186/186 testes passando
+- Pós-validação: `_staging.yml` meta→config (13 modelos, deprecação dbt resolvida); Makefile `include .env`; Streamlit migrado (duckdb→BigQuery, `make streamlit` OK)
+
+**Última etapa concluída:** Features 4–6 + Streamlit — fase 4b — Produtizar — 186/186 testes, `make streamlit` OK, fase 4b completa
+**Em andamento:** Features 4–6 + Streamlit — fase 4c — não iniciada (GitHub Actions + GCS + BigQuery remoto)
+
+---

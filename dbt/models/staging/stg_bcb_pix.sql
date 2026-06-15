@@ -4,25 +4,25 @@ with source as (
 
 select
     md5(
-        coalesce(AnoMes::varchar,            '') || '|' ||
-        coalesce(Municipio_Ibge::varchar,    '') || '|' ||
-        coalesce(Municipio,                  '') || '|' ||
-        coalesce(Estado_Ibge::varchar,       '') || '|' ||
-        coalesce(Estado,                     '') || '|' ||
-        coalesce(Sigla_Regiao,               '') || '|' ||
-        coalesce(Regiao,                     '') || '|' ||
-        coalesce(VL_PagadorPF::varchar,      '') || '|' ||
-        coalesce(QT_PagadorPF::varchar,      '') || '|' ||
-        coalesce(VL_PagadorPJ::varchar,      '') || '|' ||
-        coalesce(QT_PagadorPJ::varchar,      '') || '|' ||
-        coalesce(VL_RecebedorPF::varchar,    '') || '|' ||
-        coalesce(QT_RecebedorPF::varchar,    '') || '|' ||
-        coalesce(VL_RecebedorPJ::varchar,    '') || '|' ||
-        coalesce(QT_RecebedorPJ::varchar,    '') || '|' ||
-        coalesce(QT_PES_PagadorPF::varchar,  '') || '|' ||
-        coalesce(QT_PES_PagadorPJ::varchar,  '') || '|' ||
-        coalesce(QT_PES_RecebedorPF::varchar,'') || '|' ||
-        coalesce(QT_PES_RecebedorPJ::varchar,'')
+        coalesce(CAST(AnoMes AS STRING),             '') || '|' ||
+        coalesce(CAST(Municipio_Ibge AS STRING),     '') || '|' ||
+        coalesce(Municipio,                          '') || '|' ||
+        coalesce(CAST(Estado_Ibge AS STRING),        '') || '|' ||
+        coalesce(Estado,                             '') || '|' ||
+        coalesce(Sigla_Regiao,                       '') || '|' ||
+        coalesce(Regiao,                             '') || '|' ||
+        coalesce(CAST(VL_PagadorPF AS STRING),       '') || '|' ||
+        coalesce(CAST(QT_PagadorPF AS STRING),       '') || '|' ||
+        coalesce(CAST(VL_PagadorPJ AS STRING),       '') || '|' ||
+        coalesce(CAST(QT_PagadorPJ AS STRING),       '') || '|' ||
+        coalesce(CAST(VL_RecebedorPF AS STRING),     '') || '|' ||
+        coalesce(CAST(QT_RecebedorPF AS STRING),     '') || '|' ||
+        coalesce(CAST(VL_RecebedorPJ AS STRING),     '') || '|' ||
+        coalesce(CAST(QT_RecebedorPJ AS STRING),     '') || '|' ||
+        coalesce(CAST(QT_PES_PagadorPF AS STRING),   '') || '|' ||
+        coalesce(CAST(QT_PES_PagadorPJ AS STRING),   '') || '|' ||
+        coalesce(CAST(QT_PES_RecebedorPF AS STRING), '') || '|' ||
+        coalesce(CAST(QT_PES_RecebedorPJ AS STRING), '')
     )                      as row_hash,
     AnoMes                 as ano_mes,
     Municipio_Ibge         as municipio_ibge,

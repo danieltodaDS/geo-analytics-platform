@@ -3,8 +3,9 @@ version: 2
 models:
   - name: stg_olist_customers
     description: Clientes Olist. Dedup técnica via row_hash.
-    meta:
-      natural_pk: [customer_id]
+    config:
+      meta:
+        natural_pk: [customer_id]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -13,8 +14,9 @@ models:
 
   - name: stg_olist_orders
     description: Pedidos Olist. Datas castadas de VARCHAR para TIMESTAMP. Dedup técnica via row_hash.
-    meta:
-      natural_pk: [order_id]
+    config:
+      meta:
+        natural_pk: [order_id]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -23,8 +25,9 @@ models:
 
   - name: stg_olist_order_items
     description: Itens de pedido Olist. Dedup técnica via row_hash.
-    meta:
-      natural_pk: [order_id, order_item_id]
+    config:
+      meta:
+        natural_pk: [order_id, order_item_id]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -33,8 +36,9 @@ models:
 
   - name: stg_olist_order_payments
     description: Pagamentos Olist. Dedup técnica via row_hash.
-    meta:
-      natural_pk: [order_id, payment_sequential]
+    config:
+      meta:
+        natural_pk: [order_id, payment_sequential]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -43,8 +47,9 @@ models:
 
   - name: stg_olist_order_reviews
     description: Avaliações Olist. review_id não é único no raw (mesmo review aplicado a múltiplos pedidos). Dedup técnica via row_hash.
-    meta:
-      natural_pk: [review_id, order_id]
+    config:
+      meta:
+        natural_pk: [review_id, order_id]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -55,8 +60,9 @@ models:
 
   - name: stg_olist_geolocation
     description: Geolocalização por CEP. Múltiplas linhas por zip preservadas (dedup semântica no intermediate). Dedup técnica via row_hash.
-    meta:
-      natural_pk: []
+    config:
+      meta:
+        natural_pk: []
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -65,8 +71,9 @@ models:
 
   - name: stg_olist_products
     description: Produtos Olist. Typos corrigidos (lenght→length). Dedup técnica via row_hash.
-    meta:
-      natural_pk: [product_id]
+    config:
+      meta:
+        natural_pk: [product_id]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -75,8 +82,9 @@ models:
 
   - name: stg_olist_sellers
     description: Vendedores Olist. Dedup técnica via row_hash.
-    meta:
-      natural_pk: [seller_id]
+    config:
+      meta:
+        natural_pk: [seller_id]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -85,8 +93,9 @@ models:
 
   - name: stg_ibge_localidades
     description: Municípios IBGE. microrregiao_id e mesorregiao_id castados de DOUBLE para INTEGER. Dedup técnica via row_hash.
-    meta:
-      natural_pk: [id_municipio]
+    config:
+      meta:
+        natural_pk: [id_municipio]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -95,8 +104,9 @@ models:
 
   - name: stg_ibge_censo_9936
     description: SIDRA 9936 — % domicílios com conexão à internet. Grain (municipio). Filtrado na ingestão para internet=Sim + variável percentual.
-    meta:
-      natural_pk: [codigo_municipio]
+    config:
+      meta:
+        natural_pk: [codigo_municipio]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -111,8 +121,9 @@ models:
       Grain (municipio, variavel). Dimensões sexo/grupo_idade/cor_raca sempre = Total por construção da URL de ingestão.
       Variáveis com significado semântico: codigo_variavel='13431' (rendimento médio, R$) e '13534' (rendimento mediano, R$).
       Variáveis '13604' (contagem de moradores) e '1013604' (% do total) são auxiliares — não usar como covariável.
-    meta:
-      natural_pk: [codigo_municipio, codigo_variavel]
+    config:
+      meta:
+        natural_pk: [codigo_municipio, codigo_variavel]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -121,8 +132,9 @@ models:
 
   - name: stg_ibge_censo_9514
     description: SIDRA 9514 — colunas renomeadas. Grain (municipio, variavel, sexo, declaracao_idade, idade).
-    meta:
-      natural_pk: [codigo_municipio, codigo_variavel, codigo_sexo, codigo_declaracao_idade, codigo_idade]
+    config:
+      meta:
+        natural_pk: [codigo_municipio, codigo_variavel, codigo_sexo, codigo_declaracao_idade, codigo_idade]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
@@ -131,8 +143,9 @@ models:
 
   - name: stg_bcb_pix
     description: PIX por município — PascalCase renomeado para snake_case. Grain (municipio_ibge, ano_mes). row_hash de todas as colunas.
-    meta:
-      natural_pk: [municipio_ibge, ano_mes]
+    config:
+      meta:
+        natural_pk: [municipio_ibge, ano_mes]
     columns:
       - name: row_hash
         data_tests: [not_null, unique]
