@@ -8,11 +8,12 @@ BUCKET=geo-analytics-platform-raw
 PROJECT_NUMBER=549617161512
 REPO=danieltodaDS/geo-analytics-platform
 
-.PHONY: passo-0 passo-2a passo-2b passo-2c passo-2d passo-3 passo-4 passo-5a passo-10a provision
+.PHONY: passo-0 passo-2a passo-2b passo-2c passo-2d passo-3 passo-4 passo-5a passo-10a provision ingest-remote
 
-# Passo 0 — Criar datasets BigQuery (pré-requisito de passo-2d e dbt)
+# Passo 0 — Habilitar APIs e criar datasets BigQuery (pré-requisito de passo-2d e dbt)
 passo-0:
 	gcloud config set project $(PROJECT)
+	gcloud services enable iamcredentials.googleapis.com --project=$(PROJECT)
 	-bq mk --dataset --location=US $(PROJECT):raw
 	-bq mk --dataset --location=US $(PROJECT):staging
 	-bq mk --dataset --location=US $(PROJECT):intermediate
@@ -115,13 +116,11 @@ passo-10a:
 	gcloud iam service-accounts keys create streamlit-key.json \
 	  --iam-account=streamlit-reader@$(PROJECT).iam.gserviceaccount.com
 	@echo ""
-	@echo "=== COPIE O CONTEÚDO ABAIXO PARA O PAINEL DO STREAMLIT COMMUNITY CLOUD ==="
-	@echo "    Secrets → gcp_service_account (colar como TOML)"
-	@echo "==============================================================================="
-	@cat streamlit-key.json
-	@echo "==============================================================================="
+	@echo "Copiando chave para o clipboard (evita exposição no scrollback do terminal)..."
+	@xclip -selection clipboard < streamlit-key.json
 	@rm streamlit-key.json
-	@echo "Chave deletada localmente."
+	@echo "Chave copiada para o clipboard e deletada localmente."
+	@echo "Cole no painel do Streamlit Community Cloud: Secrets → gcp_service_account"
 	@echo ""
 	@echo ""
 	@echo "=== SECRET ADICIONAL NO STREAMLIT COMMUNITY CLOUD ==="
@@ -129,6 +128,13 @@ passo-10a:
 	@echo "    gcp_dataset_marts = \"marts\""
 	@echo ""
 	@echo "    (GCP_PROJECT é extraído automaticamente do project_id do service account)"
+
+# Acionar ingestão remota via GitHub Actions
+# Uso: make -f infra/Makefile.setup ingest-remote SOURCE=ibge_localidades
+#      make -f infra/Makefile.setup ingest-remote SOURCE=all
+ingest-remote:
+	gh workflow run ingest.yml --ref main --field source=$(SOURCE)
+	gh run watch
 
 # Sequência completa de provisionamento (exceto passo-5a e passo-10a — requerem verificação manual)
 provision: passo-0 passo-2a passo-2b passo-2c passo-2d passo-3 passo-4

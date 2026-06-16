@@ -1,0 +1,26 @@
+name: Transform
+
+on:
+  workflow_dispatch:
+
+jobs:
+  transform:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - run: uv sync
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/549617161512/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: github-actions@data-pipeline-lab-497514.iam.gserviceaccount.com
+
+      - name: dbt build
+        run: cd dbt && uv run dbt deps --profiles-dir . && uv run dbt build --profiles-dir .

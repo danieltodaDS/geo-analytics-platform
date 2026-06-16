@@ -48,5 +48,3 @@ jobs:
             uv run python ingestion/src/bcb_pix.py
           fi
 
-      - name: dbt build
-        run: cd dbt && uv run dbt deps --profiles-dir . && uv run dbt build --profiles-dir .
