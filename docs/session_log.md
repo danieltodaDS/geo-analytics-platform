@@ -306,3 +306,26 @@
 **Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — push + ingest.yml + passo-4 (External Tables IBGE/BCB) pendentes
 
 ---
+
+**2026-06-16 (continuação 3)**
+- Histórico git reescrito: `Co-Authored-By` removido de 135 commits via `git-filter-repo`
+- `docs/hash_map.txt` criado localmente (gitignored): mapeamento `old_hash → new_hash` para referência futura
+- Tags `v0.1-fase-4a` e `v0.2-fase-4b` recriadas nos novos hashes; repo remoto deletado e recriado limpo
+- Default branch corrigida para `main` no GitHub; gitleaks executado — 0 vazamentos em todo o histórico
+
+**Última etapa concluída:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — push + ingest.yml + passo-4 (External Tables IBGE/BCB) pendentes
+**Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — push + ingest.yml + passo-4 (External Tables IBGE/BCB) pendentes
+
+---
+
+**2026-06-16 (continuação 4)**
+- Repo GitHub recriado (público); remote configurado; PR feat/fase-4c-remoto → main mergeado
+- IAM Credentials API faltava — bloqueava WIF; adicionada ao Makefile.setup passo-0 e à spec (Passo 2a)
+- Decisão: `dbt build` separado de `ingest.yml`; `transform.yml` criado; `dbt build` removido do `ingest.yml`
+- `specs/dbt/fase_4c.md` sincronizada: Passo 0, Passo 2a, Passo 2e (IAM project-level), Passo 9b (transform.yml), bootstrap e critério de conclusão corrigidos
+- Security fix: `cat streamlit-key.json` → `xclip -selection clipboard` em spec e Makefile.setup
+
+**Última etapa concluída:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — ingest.yml validado (WIF OK, ibge_localidades no GCS), transform.yml criado, spec sincronizada
+**Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — ingest ibge_censo + bcb_pix → passo-4 (External Tables) → transform.yml remoto pendentes
+
+---

@@ -9,7 +9,8 @@
 ## Contrato da fase
 
 ```
-O que muda:     GCS bucket criado (geo-analytics-platform-raw)
+O que muda:     Repositório GitHub público criado (danieltodaDS/geo-analytics-platform)
+                GCS bucket criado (geo-analytics-platform-raw)
                 WIF + SA github-actions provisionados (ADR-009)
                 Olist Parquets copiados para GCS (one-time gsutil cp)
                 13 External Tables no dataset raw (substituem landing + raw views)
@@ -20,7 +21,8 @@ O que muda:     GCS bucket criado (geo-analytics-platform-raw)
                 ibge_localidades.py, ibge_censo.py, bcb_pix.py: escrita via gcsfs
                 profiles.yml: dataset: landing → dataset: raw
                 .github/workflows/ci.yml criado (pytest + dbt parse)
-                .github/workflows/ingest.yml criado (workflow_dispatch)
+                .github/workflows/ingest.yml criado (workflow_dispatch — só escrita no GCS)
+                .github/workflows/transform.yml criado (workflow_dispatch — dbt build)
                 SA streamlit-reader criada (somente leitura)
                 streamlit/app.py: ADC → credenciais via st.secrets
 
@@ -43,6 +45,22 @@ O que NÃO muda: Lógica SQL de todos os modelos staging/intermediate/marts
 
 ## Sequência de implementação
 
+### Passo 0 — Criar repositório GitHub e configurar remote
+
+```bash
+gh repo create geo-analytics-platform \
+  --public \
+  --source=. \
+  --remote=origin \
+  --description="Pipeline de Analytics Engineering para Geo Analytics usando dados públicos brasileiros no GCP"
+
+git push -u origin <branch-atual>
+```
+
+> `workflow_dispatch` só é acionável (via UI ou `gh` CLI) quando o arquivo do workflow existe no branch **padrão (main)**. Merge em main é obrigatório antes de testar workflows remotamente.
+
+---
+
 ### Passo 1 — Branch e tag
 
 ```bash
@@ -56,7 +74,16 @@ git tag v0.2-fase-4b
 
 Executar sequencialmente — cada passo depende do anterior.
 
-#### 2a. Criar bucket GCS
+#### 2a. Habilitar APIs necessárias
+
+```bash
+gcloud services enable iamcredentials.googleapis.com \
+  --project=data-pipeline-lab-497514
+```
+
+Necessário para WIF — sem esta API o token OAuth2 da SA não é gerado e a escrita no GCS falha com `PERMISSION_DENIED`.
+
+#### 2b. Criar bucket GCS
 
 ```bash
 gcloud storage buckets create gs://geo-analytics-platform-raw \
@@ -64,7 +91,7 @@ gcloud storage buckets create gs://geo-analytics-platform-raw \
   --uniform-bucket-level-access
 ```
 
-#### 2b. Criar WIF pool e provider
+#### 2c. Criar WIF pool e provider
 
 ```bash
 # Pool
@@ -83,7 +110,7 @@ gcloud iam workload-identity-pools providers create-oidc github \
   --attribute-condition="assertion.repository=='danieltodaDS/geo-analytics-platform'"
 ```
 
-#### 2c. Criar SA de ingestão e vincular ao WIF
+#### 2d. Criar SA de ingestão e vincular ao WIF
 
 ```bash
 # Service account
@@ -99,7 +126,7 @@ gcloud iam service-accounts add-iam-policy-binding \
   --member="principalSet://iam.googleapis.com/projects/549617161512/locations/global/workloadIdentityPools/github-actions/attribute.repository/danieltodaDS/geo-analytics-platform"
 ```
 
-#### 2d. IAM da SA de ingestão
+#### 2e. IAM da SA de ingestão
 
 ```bash
 # GCS — escrever Parquets
@@ -107,13 +134,10 @@ gcloud storage buckets add-iam-policy-binding gs://geo-analytics-platform-raw \
   --role=roles/storage.objectUser \
   --member=serviceAccount:github-actions@data-pipeline-lab-497514.iam.gserviceaccount.com
 
-# BigQuery — criar/substituir tabelas e views por dataset
-for ds in raw staging intermediate marts; do
-  bq add-iam-policy-binding \
-    --dataset=data-pipeline-lab-497514:${ds} \
-    --role=roles/bigquery.dataEditor \
-    --member=serviceAccount:github-actions@data-pipeline-lab-497514.iam.gserviceaccount.com
-done
+# BigQuery — criar/substituir tabelas e views (project-level)
+gcloud projects add-iam-policy-binding data-pipeline-lab-497514 \
+  --role=roles/bigquery.dataEditor \
+  --member=serviceAccount:github-actions@data-pipeline-lab-497514.iam.gserviceaccount.com
 
 # BigQuery — executar jobs (dbt + bq)
 gcloud projects add-iam-policy-binding data-pipeline-lab-497514 \
@@ -411,15 +435,47 @@ jobs:
           if [ "$SOURCE" = "all" ] || [ "$SOURCE" = "bcb_pix" ]; then
             uv run python ingestion/src/bcb_pix.py
           fi
+```
+
+**Notas:**
+- `id-token: write` é obrigatório para WIF — sem ele o OIDC token não é emitido.
+- `dbt build` **não está neste workflow** — ingestão e transformação são responsabilidades distintas. `dbt build` está em `transform.yml` (Passo 9b).
+- Olist não tem input: está em GCS desde o Passo 3 e as External Tables sempre refletem os arquivos existentes.
+
+---
+
+### Passo 9b — Criar `.github/workflows/transform.yml`
+
+```yaml
+name: Transform
+
+on:
+  workflow_dispatch:
+
+jobs:
+  transform:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - run: uv sync
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/549617161512/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: github-actions@data-pipeline-lab-497514.iam.gserviceaccount.com
 
       - name: dbt build
         run: cd dbt && uv run dbt deps --profiles-dir . && uv run dbt build --profiles-dir .
 ```
 
-**Notas:**
-- `id-token: write` é obrigatório para WIF — sem ele o OIDC token não é emitido.
-- `dbt build` roda após ingest no mesmo job — os dados novos no GCS são imediatamente visíveis via External Tables.
-- Olist não tem input: está em GCS desde o Passo 3 e as External Tables sempre refletem os arquivos existentes.
+**Pré-condição de bootstrap:** as External Tables do dataset `raw` devem existir antes do primeiro run (Passo 4). Rodar `transform.yml` antes de `passo-4` resulta em `Not found: Table raw.<tabela>`.
 
 ---
 
@@ -447,15 +503,16 @@ gcloud projects add-iam-policy-binding data-pipeline-lab-497514 \
 gcloud iam service-accounts keys create streamlit-key.json \
   --iam-account=streamlit-reader@data-pipeline-lab-497514.iam.gserviceaccount.com
 
-# Copiar conteúdo para o painel do Streamlit Community Cloud (secret gcp_service_account)
-cat streamlit-key.json
+# Copiar conteúdo para o clipboard (evita exposição no scrollback do terminal)
+xclip -selection clipboard < streamlit-key.json
+# Colar no painel do Streamlit Community Cloud: Secrets → gcp_service_account
 
 # Deletar o arquivo local imediatamente após configurar o secret
 rm streamlit-key.json
 # Confirmar também no console GCP: IAM → Service Accounts → streamlit-reader → Keys
 ```
 
-> `streamlit-key.json` nunca entra no repositório. A deleção local é obrigatória — backup automático ou histórico de terminal podem expor a chave.
+> `streamlit-key.json` nunca entra no repositório. Usar `xclip` em vez de `cat` evita que o conteúdo da chave fique exposto no scrollback buffer do terminal. A deleção local é obrigatória.
 
 #### 10b. Atualizar `streamlit/app.py`
 
@@ -528,13 +585,23 @@ cd dbt && uv run dbt deps --profiles-dir . && uv run dbt parse --profiles-dir .
 # Esperado: sem erros (não requer autenticação BQ)
 ```
 
-#### `ingest.yml` — acionar na feature branch (antes do merge)
+#### Bootstrap — primeira execução remota
 
-`workflow_dispatch` pode ser acionado em qualquer branch onde o arquivo existe — não requer merge em `main`. Testar na feature branch para validar WIF e IAM antes de tocar em main:
+`workflow_dispatch` só funciona para workflows presentes no branch padrão (main). Sequência obrigatória no primeiro run:
 
-1. GitHub Actions → `Ingest` → `Run workflow` → selecionar branch `feat/fase-4c-remoto` → `source: ibge_localidades`
-2. Verificar logs: script escreve no GCS, `dbt build` passa
-3. Só após sucesso: abrir PR e fazer merge
+1. Merge da feature branch em main (PR)
+2. Ingerir todas as fontes dinâmicas:
+   ```bash
+   gh workflow run ingest.yml --ref main --field source=ibge_localidades
+   gh workflow run ingest.yml --ref main --field source=ibge_censo
+   gh workflow run ingest.yml --ref main --field source=bcb_pix
+   ```
+3. Criar External Tables (passo-4) — pode rodar com dados parciais; BigQuery registra o DDL sem ler os arquivos
+4. Acionar `transform.yml`:
+   ```bash
+   gh workflow run transform.yml --ref main
+   ```
+   Esperado: 186 testes passando
 
 #### Streamlit Community Cloud
 
@@ -547,8 +614,8 @@ cd dbt && uv run dbt deps --profiles-dir . && uv run dbt parse --profiles-dir .
 ## Critério de conclusão
 
 - `uv run pytest` + `dbt parse` passam sem credenciais BQ (CI)
-- `dbt build` completo: 186 testes passando contra BigQuery (External Tables como source)
-- `ingest.yml` executado com sucesso via `workflow_dispatch`: Parquets em GCS, `dbt build` OK
+- `ingest.yml` executado com sucesso via `workflow_dispatch`: Parquets em GCS para todas as fontes dinâmicas
+- `transform.yml` executado com sucesso via `workflow_dispatch`: 186 testes passando contra BigQuery
 - Streamlit Community Cloud rodando contra `marts` com SA de somente leitura
 
 ---

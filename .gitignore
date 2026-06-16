@@ -30,3 +30,4 @@ dbt/dbt_packages/
 /exploration
 .streamlit/secrets.toml
 streamlit-key.json
+docs/hash_map.txt
