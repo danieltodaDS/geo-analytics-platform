@@ -294,3 +294,15 @@
 **Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — provisionamento GCP e validação remota pendentes
 
 ---
+
+**2026-06-16 (continuação 2)**
+- Billing associada ao projeto GCP; bucket GCS criado; WIF pool + provider + SA provisionados; IAM configurado (project-level — dataset-level requer allowlisting)
+- 8 tabelas Olist carregadas no GCS (passo-3 OK); External Tables IBGE/BCB PIX bloqueadas por ausência de arquivos no GCS
+- Fixes no Makefile.setup: `bq add-iam-policy-binding` → `gcloud projects`, URI `*/*/*` → `*`, `bq rm` antes de CREATE (conflito VIEW vs EXTERNAL TABLE)
+- Decisão: IBGE e BCB PIX serão carregados via `ingest.yml` (workflow_dispatch) antes do passo-4 — valida WIF e gcsfs remotamente
+- `git push` pendente para habilitar workflow_dispatch na feature branch
+
+**Última etapa concluída:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — provisionamento GCP parcial (passos 0–3 OK)
+**Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — push + ingest.yml + passo-4 (External Tables IBGE/BCB) pendentes
+
+---
