@@ -23,12 +23,13 @@ tables=(
 
 for table in "${tables[@]}"; do
   echo "Criando External Table: raw.${table}"
+  bq rm -f --table "${PROJECT}:raw.${table}" 2>/dev/null || true
   bq query --nouse_legacy_sql --project_id="${PROJECT}" << EOF
 CREATE OR REPLACE EXTERNAL TABLE \`${PROJECT}.raw.${table}\`
 WITH PARTITION COLUMNS (year INT64, month INT64, day INT64)
 OPTIONS (
   format = 'PARQUET',
-  uris = ['gs://${BUCKET}/raw/${table}/*/*/*.parquet'],
+  uris = ['gs://${BUCKET}/raw/${table}/*'],
   hive_partition_uri_prefix = 'gs://${BUCKET}/raw/${table}',
   require_hive_partition_filter = false
 )

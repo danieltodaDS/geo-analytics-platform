@@ -55,12 +55,9 @@ passo-2d:
 	gcloud storage buckets add-iam-policy-binding gs://$(BUCKET) \
 	  --role=roles/storage.objectUser \
 	  --member=serviceAccount:github-actions@$(PROJECT).iam.gserviceaccount.com
-	for ds in raw staging intermediate marts; do \
-	  bq add-iam-policy-binding \
-	    --dataset=$(PROJECT):$${ds} \
-	    --role=roles/bigquery.dataEditor \
-	    --member=serviceAccount:github-actions@$(PROJECT).iam.gserviceaccount.com; \
-	done
+	gcloud projects add-iam-policy-binding $(PROJECT) \
+	  --role=roles/bigquery.dataEditor \
+	  --member=serviceAccount:github-actions@$(PROJECT).iam.gserviceaccount.com
 	gcloud projects add-iam-policy-binding $(PROJECT) \
 	  --role=roles/bigquery.jobUser \
 	  --member=serviceAccount:github-actions@$(PROJECT).iam.gserviceaccount.com
@@ -81,6 +78,12 @@ passo-3:
 	gsutil ls gs://$(BUCKET)/raw/olist_orders/
 
 # Passo 4 — Criar External Tables no dataset raw
+# ATENÇÃO: requer arquivos no GCS para todas as 13 fontes antes de executar.
+# Olist já foi carregado no passo-3.
+# IBGE e BCB PIX devem ser carregados via ingest.yml (workflow_dispatch) ANTES deste passo:
+#   1. git push -u origin feat/fase-4c-remoto
+#   2. GitHub Actions → Ingest → Run workflow → branch feat/fase-4c-remoto → source: all
+#   3. Aguardar conclusão, então executar: make -f infra/Makefile.setup passo-4
 passo-4:
 	bash infra/setup_external_tables.sh
 
@@ -102,8 +105,7 @@ passo-10a:
 	gcloud iam service-accounts create streamlit-reader \
 	  --project=$(PROJECT) \
 	  --display-name="Streamlit Reader"
-	bq add-iam-policy-binding \
-	  --dataset=$(PROJECT):marts \
+	gcloud projects add-iam-policy-binding $(PROJECT) \
 	  --role=roles/bigquery.dataViewer \
 	  --member=serviceAccount:streamlit-reader@$(PROJECT).iam.gserviceaccount.com
 	gcloud projects add-iam-policy-binding $(PROJECT) \
@@ -133,5 +135,5 @@ provision: passo-0 passo-2a passo-2b passo-2c passo-2d passo-3 passo-4
 	@echo ""
 	@echo "=== Provisionamento concluído ==="
 	@echo "Próximos passos manuais:"
-	@echo "  make -f infra/Makefile.gcp passo-5a   (drop landing, após verificar volumes)"
-	@echo "  make -f infra/Makefile.gcp passo-10a  (SA Streamlit, quando for ao ar)"
+	@echo "  make -f infra/Makefile.setup passo-5a   (drop landing, após verificar volumes)"
+	@echo "  make -f infra/Makefile.setup passo-10a  (SA Streamlit, quando for ao ar)"
