@@ -226,7 +226,7 @@ Cobre Localidades e Censo 2022 — duas APIs distintas no mesmo domínio.
 #### Feature 8 — CI/CD GitHub Actions
 
 **Produtizar** (sem exploração necessária)
-- `ci.yml` — pytest + dbt compile + dbt test (todo PR)
+- `ci.yml` — pytest + dbt compile (todo PR) — sem dbt test, sem credenciais BQ no CI (ver ADR-009)
 - `ingest.yml` — `workflow_dispatch` com input de fonte; executa script de ingestão + upload para GCS
 
 ---

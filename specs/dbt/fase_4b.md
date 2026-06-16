@@ -66,19 +66,22 @@ O `landing` é uma **zona de ingestão temporária** — dados brutos chegam aqu
 
 ### Transição para fase 4c
 
-Na fase 4c, os Parquets migram para GCS (o bucket é o datalake definitivo). O `bq load` local deixa de existir. No lugar das tabelas físicas, o dataset `landing` passa a conter **External Tables** apontando para o bucket GCS — mesmos nomes de tabela, mesmo schema, mesmo dataset.
+Na fase 4c, os Parquets migram para GCS. O dataset `landing` é eliminado. O dataset `raw` passa a conter **External Tables** apontando diretamente para o GCS — eliminando tanto o `bq load` quanto os dbt raw views.
 
 ```
-GCS gs://bucket/landing/**/*.parquet   ← datalake remoto, imutável
-        ↓ BigQuery External Table (landing.olist_customers, landing.olist_orders, ...)
-landing.olist_customers  (EXTERNAL TABLE — substitui a TABLE do bq load)
-        ↓ source('landing', ...)
-raw.olist_customers      (VIEW dbt — inalterada)
-        ↓ ref('olist_customers')
+GCS gs://geo-analytics-platform-raw/raw/{fonte}/year=YYYY/...
+        ↓ BigQuery External Table
+raw.olist_customers  (EXTERNAL TABLE — substitui landing + raw view)
+        ↓ source('raw', ...)
 staging.stg_olist_customers
 ```
 
-Como os nomes de tabela no dataset `landing` não mudam, `_sources.yml` e todos os raw models permanecem **inalterados** na transição 4b → 4c. Staging, intermediate e marts: zero alteração. A única mudança é substituir as tabelas físicas do `landing` por External Tables no GCS.
+**Mudanças na transição 4b → 4c:**
+- Dataset `landing` eliminado
+- 13 arquivos `models/raw/*.sql` eliminados
+- `_sources.yml`: `source: landing` → `source: raw`
+- 13 modelos staging: `{{ ref('table') }}` → `{{ source('raw', 'table') }}`
+- Intermediate e marts: sem alteração
 
 ---
 

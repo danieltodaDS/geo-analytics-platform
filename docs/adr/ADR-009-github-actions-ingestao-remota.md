@@ -45,6 +45,7 @@ Com esse perfil de carga, o problema a resolver não é "agendamento confiável"
 - A fase "Remoto" do roadmap é reduzida: sem `deploy.yml` de build/push de imagem, apenas `ingest.yml` com `workflow_dispatch`
 - O `ingest.yml` cobre o pipeline completo: `uv run python ingest.py` → Parquet em GCS → `bq load` no dataset raw do BigQuery
 - dbt na fase remota roda via dbt-core em GitHub Actions (step `dbt run --target prod`) ou dbt Cloud — ambos válidos; dbt Cloud opcional para portfólio
+- `ci.yml` (todo PR) executa apenas `pytest` + `dbt compile` — sem `dbt test` e sem credenciais BQ no CI. `dbt compile` valida sintaxe SQL, Jinja e referências entre modelos sem conexão ao warehouse. `dbt test` foi descartado do CI por exigir WIF, adicionar custo de queries BQ a cada PR e latência desnecessária para dados estáticos.
 
 ### Autenticação GCP no runner
 
