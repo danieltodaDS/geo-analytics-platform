@@ -26,5 +26,4 @@ dbt/dbt_packages/
 /data
 /exploration
 .streamlit/secrets.toml
-infra/Makefile.gcp
 streamlit-key.json
