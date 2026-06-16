@@ -1,9 +1,9 @@
 version: 2
 
 sources:
-  - name: landing
+  - name: raw
     database: data-pipeline-lab-497514
-    schema: landing
+    schema: raw
     tables:
       - name: olist_customers
       - name: olist_orders

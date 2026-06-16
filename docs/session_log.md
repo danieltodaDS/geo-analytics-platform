@@ -259,3 +259,50 @@
 **Em andamento:** Features 4–6 + Streamlit — fase 4c — não iniciada (GitHub Actions + GCS + BigQuery remoto)
 
 ---
+
+**2026-06-15 (continuação)**
+- `docs/understanding/fase_4c.md` criado: 6 decisões resolvidas (bucket, RAW_BASE_PATH, WIF, ci.yml, Streamlit deploy, External Tables)
+- Arquitetura 4c definida: External Tables no dataset `raw` (não `landing`); `landing` eliminado; 13 raw views dbt eliminados; staging migra `ref()` → `source('raw', ...)`
+- `dbt parse` confirmado empiricamente como substituto de `dbt compile` no CI (sem credenciais BQ); `dbt compile` falha sem auth
+- IAM corrigido: `objectAdmin` → `objectUser` na SA de ingestão; SA Streamlit separada (somente leitura, `marts` + `jobUser`)
+- `specs/dbt/fase_4b.md` seção "Transição para fase 4c" corrigida; ADR-009 atualizado com decisão ci.yml; roadmap corrigido
+
+**Última etapa concluída:** Feature 8 — CI/CD + Infra — fase 4c — Especificar — `specs/dbt/fase_4c.md` criada e aprovada (6 ressalvas do Validador incorporadas)
+**Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — não iniciada
+
+---
+
+**2026-06-16**
+- Branch `feat/fase-4c-remoto` criada; tag `v0.2-fase-4b` aplicada
+- 13 `models/raw/*.sql` removidos; `_sources.yml` migrado (`landing` → `raw`); `dbt_project.yml` config raw órfã removida
+- 13 staging models migrados: `ref()` → `source('raw', ...)`; `profiles.yml` removido do `.gitignore` (sem credenciais, necessário para CI)
+- `gcsfs` adicionado; 3 scripts de ingestão atualizados: `Path(base)/...` → f-string + guard `gs://`
+- `.github/workflows/ci.yml` e `ingest.yml` criados; `infra/setup_external_tables.sh` e `infra/Makefile.gcp` (gitignored) criados
+- `streamlit/app.py` migrado: ADC → `st.secrets["gcp_service_account"]`; `Makefile` atualizado (bq-load removido, setup-external-tables adicionado)
+- Validação local: `dbt parse` limpo, 35/35 testes passando; infra GCP (passos 2–5, 10a, 11) pendente execução manual
+
+**Última etapa concluída:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — código completo na branch `feat/fase-4c-remoto`
+**Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — provisionamento GCP e validação remota pendentes
+
+---
+
+**2026-06-16 (continuação)**
+- `streamlit/app.py` corrigido: guard em `st.secrets` — local usa ADC, cloud usa SA JSON; `project` extraído do `project_id` do secret; `dataset` hardcoded `"marts"` no branch cloud
+- `infra/Makefile.gcp passo-10a` atualizado: env vars de produção removidas, instrução de secret `gcp_dataset_marts` adicionada
+
+**Última etapa concluída:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — Streamlit local + cloud corrigido
+**Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — provisionamento GCP e validação remota pendentes
+
+---
+
+**2026-06-16 (continuação 2)**
+- Billing associada ao projeto GCP; bucket GCS criado; WIF pool + provider + SA provisionados; IAM configurado (project-level — dataset-level requer allowlisting)
+- 8 tabelas Olist carregadas no GCS (passo-3 OK); External Tables IBGE/BCB PIX bloqueadas por ausência de arquivos no GCS
+- Fixes no Makefile.setup: `bq add-iam-policy-binding` → `gcloud projects`, URI `*/*/*` → `*`, `bq rm` antes de CREATE (conflito VIEW vs EXTERNAL TABLE)
+- Decisão: IBGE e BCB PIX serão carregados via `ingest.yml` (workflow_dispatch) antes do passo-4 — valida WIF e gcsfs remotamente
+- `git push` pendente para habilitar workflow_dispatch na feature branch
+
+**Última etapa concluída:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — provisionamento GCP parcial (passos 0–3 OK)
+**Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — push + ingest.yml + passo-4 (External Tables IBGE/BCB) pendentes
+
+---

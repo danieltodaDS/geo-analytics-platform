@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+from google.oauth2 import service_account
 import pandas as pd
 import streamlit as st
 from google.cloud import bigquery
@@ -36,9 +37,20 @@ RATIO_THRESHOLDS = (0.30, 0.70)
 
 @st.cache_data(ttl=3600)
 def load_data() -> pd.DataFrame:
-    project = os.environ["GCP_PROJECT"]
-    dataset = os.environ["GCP_DATASET_MARTS"]
-    client = bigquery.Client(project=project)
+    if "gcp_service_account" in st.secrets:
+        # Streamlit Community Cloud: credenciais via st.secrets
+        credentials = service_account.Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=["https://www.googleapis.com/auth/bigquery.readonly"],
+        )
+        project = st.secrets["gcp_service_account"]["project_id"]
+        dataset = st.secrets.get("gcp_dataset_marts", "marts")
+        client = bigquery.Client(project=project, credentials=credentials)
+    else:
+        # Local: ADC via gcloud auth application-default login
+        project = os.environ["GCP_PROJECT"]
+        dataset = os.environ["GCP_DATASET_MARTS"]
+        client = bigquery.Client(project=project)
     sql = f"SELECT * FROM `{project}.{dataset}.mart_geo_analytics`"
     return client.query(sql).to_dataframe()
 
