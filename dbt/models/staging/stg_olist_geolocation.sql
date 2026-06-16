@@ -1,5 +1,5 @@
 with source as (
-    select * from {{ ref('olist_geolocation') }}
+    select * from {{ source('raw', 'olist_geolocation') }}
 ),
 
 deduped as (

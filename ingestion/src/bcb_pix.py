@@ -88,15 +88,9 @@ def run() -> None:
 
         today = datetime.now(tz=timezone.utc)
         base = os.environ.get("RAW_BASE_PATH", "data/raw")
-        dest = (
-            Path(base)
-            / "bcb_pix"
-            / f"year={today.year}"
-            / f"month={today.month:02d}"
-            / f"day={today.day:02d}"
-            / "data.parquet"
-        )
-        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest = f"{base}/bcb_pix/year={today.year}/month={today.month:02d}/day={today.day:02d}/data.parquet"
+        if not dest.startswith("gs://"):
+            Path(dest).parent.mkdir(parents=True, exist_ok=True)
         df.to_parquet(dest, index=False, compression="snappy")
         log.info("bcb_pix.parquet_gravado", destino_path=str(dest))
     except Exception:

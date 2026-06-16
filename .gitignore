@@ -13,7 +13,6 @@ wheels/
 .env
 
 # dbt
-dbt/profiles.yml
 dbt/.user.yml
 dbt/geo_analytics.duckdb
 geo_analytics.duckdb
@@ -26,3 +25,6 @@ dbt/dbt_packages/
 /_archive
 /data
 /exploration
+.streamlit/secrets.toml
+infra/Makefile.gcp
+streamlit-key.json

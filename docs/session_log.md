@@ -259,3 +259,29 @@
 **Em andamento:** Features 4–6 + Streamlit — fase 4c — não iniciada (GitHub Actions + GCS + BigQuery remoto)
 
 ---
+
+**2026-06-15 (continuação)**
+- `docs/understanding/fase_4c.md` criado: 6 decisões resolvidas (bucket, RAW_BASE_PATH, WIF, ci.yml, Streamlit deploy, External Tables)
+- Arquitetura 4c definida: External Tables no dataset `raw` (não `landing`); `landing` eliminado; 13 raw views dbt eliminados; staging migra `ref()` → `source('raw', ...)`
+- `dbt parse` confirmado empiricamente como substituto de `dbt compile` no CI (sem credenciais BQ); `dbt compile` falha sem auth
+- IAM corrigido: `objectAdmin` → `objectUser` na SA de ingestão; SA Streamlit separada (somente leitura, `marts` + `jobUser`)
+- `specs/dbt/fase_4b.md` seção "Transição para fase 4c" corrigida; ADR-009 atualizado com decisão ci.yml; roadmap corrigido
+
+**Última etapa concluída:** Feature 8 — CI/CD + Infra — fase 4c — Especificar — `specs/dbt/fase_4c.md` criada e aprovada (6 ressalvas do Validador incorporadas)
+**Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — não iniciada
+
+---
+
+**2026-06-16**
+- Branch `feat/fase-4c-remoto` criada; tag `v0.2-fase-4b` aplicada
+- 13 `models/raw/*.sql` removidos; `_sources.yml` migrado (`landing` → `raw`); `dbt_project.yml` config raw órfã removida
+- 13 staging models migrados: `ref()` → `source('raw', ...)`; `profiles.yml` removido do `.gitignore` (sem credenciais, necessário para CI)
+- `gcsfs` adicionado; 3 scripts de ingestão atualizados: `Path(base)/...` → f-string + guard `gs://`
+- `.github/workflows/ci.yml` e `ingest.yml` criados; `infra/setup_external_tables.sh` e `infra/Makefile.gcp` (gitignored) criados
+- `streamlit/app.py` migrado: ADC → `st.secrets["gcp_service_account"]`; `Makefile` atualizado (bq-load removido, setup-external-tables adicionado)
+- Validação local: `dbt parse` limpo, 35/35 testes passando; infra GCP (passos 2–5, 10a, 11) pendente execução manual
+
+**Última etapa concluída:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — código completo na branch `feat/fase-4c-remoto`
+**Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — provisionamento GCP e validação remota pendentes
+
+---

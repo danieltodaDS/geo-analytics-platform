@@ -1,5 +1,5 @@
 with source as (
-    select * from {{ ref('ibge_censo_10295') }}
+    select * from {{ source('raw', 'ibge_censo_10295') }}
 )
 
 select

@@ -94,17 +94,11 @@ def _parse_sidra(data: list[dict]) -> list[SidraRegistroRaw]:
 def _gravar(records: list[SidraRegistroRaw], tabela: str, today: datetime) -> None:
     df = pd.DataFrame([r.model_dump() for r in records])
     base = os.environ.get("RAW_BASE_PATH", "data/raw")
-    dest = (
-        Path(base)
-        / f"ibge_censo_{tabela}"
-        / f"year={today.year}"
-        / f"month={today.month:02d}"
-        / f"day={today.day:02d}"
-        / "data.parquet"
-    )
-    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest = f"{base}/ibge_censo_{tabela}/year={today.year}/month={today.month:02d}/day={today.day:02d}/data.parquet"
+    if not dest.startswith("gs://"):
+        Path(dest).parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(dest, index=False, compression="snappy")
-    log.info("ibge_censo.parquet_gravado", tabela=tabela, destino_path=str(dest))
+    log.info("ibge_censo.parquet_gravado", tabela=tabela, destino_path=dest)
 
 
 def run() -> None:

@@ -1,5 +1,5 @@
 with source as (
-    select * from {{ ref('bcb_pix') }}
+    select * from {{ source('raw', 'bcb_pix') }}
 )
 
 select

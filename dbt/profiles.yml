@@ -1,0 +1,11 @@
+geo_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: data-pipeline-lab-497514
+      dataset: raw   # placeholder — sobrescrito por generate_schema_name.sql
+      location: US
+      threads: 4
+      timeout_seconds: 300

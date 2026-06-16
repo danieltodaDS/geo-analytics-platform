@@ -1,5 +1,5 @@
 with source as (
-    select * from {{ ref('olist_products') }}
+    select * from {{ source('raw', 'olist_products') }}
 ),
 
 deduped as (

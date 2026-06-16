@@ -1,5 +1,5 @@
 with source as (
-    select * from {{ ref('ibge_localidades') }}
+    select * from {{ source('raw', 'ibge_localidades') }}
 ),
 
 deduped as (
