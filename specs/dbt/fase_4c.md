@@ -80,7 +80,7 @@ gcloud iam workload-identity-pools providers create-oidc github \
   --project=data-pipeline-lab-497514 \
   --issuer-uri="https://token.actions.githubusercontent.com" \
   --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
-  --attribute-condition="assertion.repository=='danieltoda/geo-analytics-platform'"
+  --attribute-condition="assertion.repository=='danieltodaDS/geo-analytics-platform'"
 ```
 
 #### 2c. Criar SA de ingestão e vincular ao WIF
@@ -96,7 +96,7 @@ gcloud iam service-accounts add-iam-policy-binding \
   github-actions@data-pipeline-lab-497514.iam.gserviceaccount.com \
   --project=data-pipeline-lab-497514 \
   --role="roles/iam.workloadIdentityUser" \
-  --member="principalSet://iam.googleapis.com/projects/549617161512/locations/global/workloadIdentityPools/github-actions/attribute.repository/danieltoda/geo-analytics-platform"
+  --member="principalSet://iam.googleapis.com/projects/549617161512/locations/global/workloadIdentityPools/github-actions/attribute.repository/danieltodaDS/geo-analytics-platform"
 ```
 
 #### 2d. IAM da SA de ingestão

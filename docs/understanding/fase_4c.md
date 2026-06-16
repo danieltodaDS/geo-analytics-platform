@@ -82,7 +82,7 @@ Nenhuma mudança em `olist.py`. A assimetria com os outros scripts é intenciona
 | Service Account | `github-actions@data-pipeline-lab-497514.iam.gserviceaccount.com` |
 | WIF Pool | `github-actions` (global) |
 | WIF Provider (OIDC) | `github` |
-| Repositório autorizado | `danieltoda/geo-analytics-platform` |
+| Repositório autorizado | `danieltodaDS/geo-analytics-platform` |
 | Project Number | `549617161512` |
 
 ### Sequência de criação (5 passos)
@@ -106,14 +106,14 @@ gcloud iam workload-identity-pools providers create-oidc github \
   --project=data-pipeline-lab-497514 \
   --issuer-uri="https://token.actions.githubusercontent.com" \
   --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
-  --attribute-condition="assertion.repository=='danieltoda/geo-analytics-platform'"
+  --attribute-condition="assertion.repository=='danieltodaDS/geo-analytics-platform'"
 
 # 4. Binding: permite que o repo impersone a SA
 gcloud iam service-accounts add-iam-policy-binding \
   github-actions@data-pipeline-lab-497514.iam.gserviceaccount.com \
   --project=data-pipeline-lab-497514 \
   --role="roles/iam.workloadIdentityUser" \
-  --member="principalSet://iam.googleapis.com/projects/549617161512/locations/global/workloadIdentityPools/github-actions/attribute.repository/danieltoda/geo-analytics-platform"
+  --member="principalSet://iam.googleapis.com/projects/549617161512/locations/global/workloadIdentityPools/github-actions/attribute.repository/danieltodaDS/geo-analytics-platform"
 
 # 5. IAM: permissões da SA nos recursos do projeto
 #    GCS — escrever e sobrescrever Parquets

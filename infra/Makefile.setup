@@ -6,7 +6,7 @@
 PROJECT=data-pipeline-lab-497514
 BUCKET=geo-analytics-platform-raw
 PROJECT_NUMBER=549617161512
-REPO=danieltoda/geo-analytics-platform
+REPO=danieltodaDS/geo-analytics-platform
 
 .PHONY: passo-0 passo-2a passo-2b passo-2c passo-2d passo-3 passo-4 passo-5a passo-10a provision
 
