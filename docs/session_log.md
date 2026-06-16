@@ -285,3 +285,12 @@
 **Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — provisionamento GCP e validação remota pendentes
 
 ---
+
+**2026-06-16 (continuação)**
+- `streamlit/app.py` corrigido: guard em `st.secrets` — local usa ADC, cloud usa SA JSON; `project` extraído do `project_id` do secret; `dataset` hardcoded `"marts"` no branch cloud
+- `infra/Makefile.gcp passo-10a` atualizado: env vars de produção removidas, instrução de secret `gcp_dataset_marts` adicionada
+
+**Última etapa concluída:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — Streamlit local + cloud corrigido
+**Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — provisionamento GCP e validação remota pendentes
+
+---
