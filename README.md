@@ -86,23 +86,38 @@ Visualização — Streamlit
 
 ## Como Rodar
 
-### Pré-requisitos
+### Dependências
 
 ```bash
 # Python 3.11 + uv
 uv sync
-
-# Autenticação GCP + criação dos datasets BigQuery + External Tables
-make auth
-make setup-gcloud
-make setup-external-tables
 ```
 
-### Local
+### Provisionamento inicial (one-time)
 
-Ingestão local (Parquet em `data/raw/`) + dbt contra BigQuery via ADC.
+Executar uma única vez ao configurar o ambiente do zero.
 
-> **Olist:** dataset estático baixado do Kaggle ([Brazilian E-Commerce Public Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)). Após baixar, extraia os CSVs em `data/olist/` (ex: `data/olist/olist_orders_dataset.csv`). Execute `make ingest-local` para gerar os Parquets. Para subir ao GCS: `make olist-upload`.
+```bash
+make auth                   # login GCP + ADC
+make setup-gcloud           # cria datasets BigQuery
+```
+
+**Olist:** dataset estático do Kaggle ([Brazilian E-Commerce Public Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)). Extraia os CSVs em `data/olist/` (ex: `data/olist/olist_orders_dataset.csv`) e suba ao GCS:
+
+```bash
+make ingest-local           # gera Parquets em data/raw/
+make olist-upload           # sobe Parquets Olist para o GCS
+```
+
+Depois de todas as fontes dinâmicas no GCS (via `make ingest-remote` ou Actions):
+
+```bash
+make setup-external-tables  # cria External Tables no dataset raw do BigQuery
+```
+
+### Uso recorrente
+
+**Local** — ingestão para `data/raw/` + dbt contra BigQuery via ADC:
 
 ```bash
 make pipeline-local   # ingestão + dbt build + testes
@@ -112,11 +127,11 @@ make test             # pytest + dbt test
 make streamlit        # app local contra BigQuery
 ```
 
-### Produção (GitHub Actions)
+**Produção** — via GitHub Actions:
 
 ```bash
 make pipeline-remote    # ingest + transform sequencial via Actions
-make ingest-remote      # apenas ingestão (todas as fontes dinâmicas)
+make ingest-remote      # apenas ingestão (fontes dinâmicas: IBGE + BCB PIX)
 make transform-remote   # apenas dbt build
 ```
 
@@ -172,6 +187,8 @@ geo-analytics-platform/
 │   ├── dbt_project.yml
 │   ├── profiles.yml
 │   └── packages.yml
+├── infra/
+│   └── setup_external_tables.sh  ← DDL das External Tables (one-time)
 ├── streamlit/
 ├── Makefile
 └── pyproject.toml
