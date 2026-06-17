@@ -57,7 +57,7 @@ def load_data() -> pd.DataFrame:
         dataset = os.environ["GCP_DATASET_MARTS"]
         client = bigquery.Client(project=project)
     sql = f"SELECT * FROM `{project}.{dataset}.mart_geo_analytics`"
-    return client.query(sql).to_dataframe()
+    return client.query(sql).to_dataframe(create_bqstorage_client=False)
 
 
 @st.cache_data
