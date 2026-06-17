@@ -47,7 +47,7 @@ final as (
         o.ticket_medio,
         o.frete_medio,
         o.share_frete,
-        o.pct_pagamento_cartao,
+        COALESCE(o.pct_pagamento_cartao, 0.0)                                                    AS pct_pagamento_cartao,
         o.pct_pagamento_boleto,
         o.avg_parcelas_cartao,
         o.avg_dias_entrega,
@@ -78,7 +78,21 @@ final as (
         -- derivadas cruzadas
         o.receita_total / nullif(p.populacao_residente, 0)                                     as receita_por_habitante,
         CAST(o.total_pedidos AS FLOAT64) / nullif(p.populacao_residente, 0)                     as pedidos_por_habitante,
-        CAST(o.clientes_unicos AS FLOAT64) / nullif(p.populacao_residente, 0)                   as penetracao_olist
+        CAST(o.clientes_unicos AS FLOAT64) / nullif(p.populacao_residente, 0)                     as penetracao_olist,
+
+        -- categorias para filtros
+        CASE
+            WHEN p.populacao_residente < 10000  THEN 'Micro (< 10 mil)'
+            WHEN p.populacao_residente < 50000  THEN 'Pequeno (10–50 mil)'
+            WHEN p.populacao_residente < 200000 THEN 'Médio (50–200 mil)'
+            ELSE                                     'Grande (≥ 200 mil)'
+        END                                                                                      AS categoria_populacao,
+        CASE
+            WHEN o.total_pedidos IS NULL THEN 'Sem presença'
+            WHEN o.total_pedidos <= 10   THEN 'Baixa (1–10)'
+            WHEN o.total_pedidos <= 100  THEN 'Média (11–100)'
+            ELSE                              'Alta (> 100)'
+        END                                                                                      AS categoria_olist
 
     from olist_2018 o
     inner join pix_periodo p on o.id_municipio = p.id_municipio

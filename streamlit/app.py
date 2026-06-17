@@ -34,6 +34,19 @@ FEATURE_LABELS = {
 
 RATIO_THRESHOLDS = (0.30, 0.70)
 
+CATEGORIAS_POPULACAO = [
+    'Micro (< 10 mil)',
+    'Pequeno (10–50 mil)',
+    'Médio (50–200 mil)',
+    'Grande (≥ 200 mil)',
+]
+CATEGORIAS_OLIST = [
+    'Sem presença',
+    'Baixa (1–10)',
+    'Média (11–100)',
+    'Alta (> 100)',
+]
+
 
 @st.cache_data(ttl=3600)
 def load_data() -> pd.DataFrame:
@@ -60,11 +73,10 @@ def load_data() -> pd.DataFrame:
     return client.query(sql).to_dataframe(create_bqstorage_client=False)
 
 
-@st.cache_data
 def build_matching_state(
-    _df: pd.DataFrame,
+    df: pd.DataFrame,
 ) -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
-    df_match = _df.dropna(subset=FEATURES).copy().reset_index(drop=True)
+    df_match = df.dropna(subset=FEATURES).copy().reset_index(drop=True)
     X = df_match[FEATURES].values
     VI = np.linalg.inv(np.cov(X.T))
     return df_match, X, VI
@@ -145,11 +157,53 @@ def main() -> None:
     st.caption("Selecione um município para encontrar os 5 mais parecidos com base em perfil socioeconômico e de e-commerce.")
 
     df = load_data()
-    df_match, X, VI = build_matching_state(df)
 
-    df_todos = df.copy()
-    df_todos["label"] = df_todos["nome_municipio"] + " - " + df_todos["uf_sigla"]
-    opcoes = df_todos.sort_values("label")[["label", "id_municipio"]]
+    # --- Sidebar: filtros ---
+    st.sidebar.header("Filtros")
+
+    sel_populacao = st.sidebar.multiselect(
+        "Porte populacional",
+        options=["Todos"] + CATEGORIAS_POPULACAO,
+        default=["Todos"],
+    )
+    sel_olist = st.sidebar.multiselect(
+        "Presença Olist",
+        options=["Todos"] + CATEGORIAS_OLIST,
+        default=["Todos"],
+    )
+    regioes = sorted(df["macroregiao_nome"].dropna().unique().tolist())
+    sel_regiao = st.sidebar.multiselect(
+        "Macrorregião",
+        options=["Todos"] + regioes,
+        default=["Todos"],
+    )
+    ufs = sorted(df["uf_sigla"].dropna().unique().tolist())
+    sel_uf = st.sidebar.multiselect(
+        "UF",
+        options=["Todos"] + ufs,
+        default=["Todos"],
+    )
+
+    # --- Aplicar filtros ---
+    df_filtrado = df.copy()
+    if "Todos" not in sel_populacao and sel_populacao:
+        df_filtrado = df_filtrado[df_filtrado["categoria_populacao"].isin(sel_populacao)]
+    if "Todos" not in sel_olist and sel_olist:
+        df_filtrado = df_filtrado[df_filtrado["categoria_olist"].isin(sel_olist)]
+    if "Todos" not in sel_regiao and sel_regiao:
+        df_filtrado = df_filtrado[df_filtrado["macroregiao_nome"].isin(sel_regiao)]
+    if "Todos" not in sel_uf and sel_uf:
+        df_filtrado = df_filtrado[df_filtrado["uf_sigla"].isin(sel_uf)]
+
+    st.sidebar.caption(f"{len(df_filtrado)} municípios no conjunto filtrado.")
+
+    # --- Matching usa df_filtrado ---
+    df_match, X, VI = build_matching_state(df_filtrado)
+
+    # --- Selectbox: apenas municípios do conjunto filtrado ---
+    df_filtrado = df_filtrado.copy()
+    df_filtrado["label"] = df_filtrado["nome_municipio"] + " - " + df_filtrado["uf_sigla"]
+    opcoes = df_filtrado.sort_values("label")[["label", "id_municipio"]]
     label_para_id = dict(zip(opcoes["label"], opcoes["id_municipio"]))
 
     label_selecionado = st.selectbox(
@@ -167,7 +221,7 @@ def main() -> None:
     if municipio_id not in df_match["id_municipio"].values:
         st.warning(
             "Este município não está disponível para matching por ausência de covariáveis completas "
-            f"(`pct_pagamento_cartao` ou `ticket_medio` sem dados)."
+            "(`ticket_medio` sem dados)."
         )
         return
 

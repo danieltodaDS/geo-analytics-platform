@@ -227,6 +227,9 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: "pct_valor_recebedor_pj IS NULL OR (pct_valor_recebedor_pj >= 0 AND pct_valor_recebedor_pj <= 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "pct_pagamento_cartao >= 0 AND pct_pagamento_cartao <= 1"
     columns:
       - name: id_municipio
         description: Código IBGE do município (7 dígitos). PK.
@@ -271,7 +274,9 @@ models:
       - name: share_frete
         description: Participação do frete na receita total (pedidos entregues em 2018).
       - name: pct_pagamento_cartao
-        description: Proporção do valor pago em cartão de crédito (pedidos entregues em 2018).
+        description: "% pedidos pagos em cartão de crédito (pedidos entregues em 2018). NULL substituído por 0 (municípios sem nenhum pagamento em cartão)."
+        data_tests:
+          - not_null
       - name: pct_pagamento_boleto
         description: Proporção do valor pago em boleto (pedidos entregues em 2018).
       - name: avg_parcelas_cartao
@@ -324,3 +329,16 @@ models:
         description: total_pedidos (Olist 2018) / populacao_residente (Censo 2022).
       - name: penetracao_olist
         description: clientes_unicos (Olist 2018) / populacao_residente (Censo 2022).
+      - name: categoria_populacao
+        description: "Porte do município por população residente: Micro (< 10 mil), Pequeno (10–50 mil), Médio (50–200 mil), Grande (≥ 200 mil)."
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Micro (< 10 mil)', 'Pequeno (10–50 mil)', 'Médio (50–200 mil)', 'Grande (≥ 200 mil)']
+              quote: true
+      - name: categoria_olist
+        description: "Nível de presença Olist por total de pedidos. 'Sem presença' sem dados no mart atual (INNER JOIN garante presença Olist)."
+        data_tests:
+          - accepted_values:
+              values: ['Sem presença', 'Baixa (1–10)', 'Média (11–100)', 'Alta (> 100)']
+              quote: true
