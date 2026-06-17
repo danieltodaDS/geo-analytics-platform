@@ -140,9 +140,9 @@ def plot_small_multiples(alvo: pd.Series, matches: pd.DataFrame) -> go.Figure:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Geo Analytics — Matching", layout="wide")
-    st.title("Matching por Mahalanobis")
-    st.caption("Selecione um município para encontrar os 5 mais similares com base em perfil socioeconômico e de e-commerce.")
+    st.set_page_config(page_title="Geo Analytics — Municípios Similares", layout="wide")
+    st.title("Municípios Similares")
+    st.caption("Selecione um município para encontrar os 5 mais parecidos com base em perfil socioeconômico e de e-commerce.")
 
     df = load_data()
     df_match, X, VI = build_matching_state(df)
@@ -192,7 +192,7 @@ def main() -> None:
         hide_index=False,
     )
 
-    st.subheader("Comparativo de covariáveis")
+    st.subheader("Dados comparativos detalhados")
     st.plotly_chart(plot_small_multiples(alvo, matches), width="stretch")
 
 
