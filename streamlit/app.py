@@ -200,9 +200,11 @@ def main() -> None:
     st.sidebar.caption(f"{len(df_filtrado)} municípios no conjunto filtrado.")
 
     st.sidebar.divider()
-    with st.sidebar.expander("ℹ️ Sobre este app"):
+    with st.sidebar.container(border=True):
         st.markdown(
             f"""
+**ℹ️ Sobre este app**
+
 Empresas de e-commerce precisam escolher onde expandir — mas comparar
 milhares de municípios manualmente é inviável. Este app encontra
 automaticamente os municípios mais parecidos com qualquer cidade escolhida,
