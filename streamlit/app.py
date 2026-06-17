@@ -41,7 +41,7 @@ def load_data() -> pd.DataFrame:
         # Streamlit Community Cloud: credenciais via st.secrets
         credentials = service_account.Credentials.from_service_account_info(
             st.secrets["gcp_service_account"],
-            scopes=["https://www.googleapis.com/auth/bigquery.readonly"],
+            scopes=["https://www.googleapis.com/auth/bigquery"],
         )
         project = st.secrets["gcp_service_account"]["project_id"]
         dataset = st.secrets.get("gcp_dataset_marts", "marts")
