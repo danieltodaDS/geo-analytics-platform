@@ -200,33 +200,24 @@ def main() -> None:
     st.sidebar.caption(f"{len(df_filtrado)} municípios no conjunto filtrado.")
 
     st.sidebar.divider()
-    st.sidebar.markdown(
-        f"""
-<div style="
-    background-color: #f0f2f6;
-    border-radius: 12px;
-    padding: 12px 14px;
-    font-size: 0.82rem;
-    line-height: 1.5;
-">
-<b>Qual problema resolve?</b><br>
+    with st.sidebar.expander("ℹ️ Sobre este app"):
+        st.markdown(
+            f"""
 Empresas de e-commerce precisam escolher onde expandir — mas comparar
 milhares de municípios manualmente é inviável. Este app encontra
 automaticamente os municípios mais parecidos com qualquer cidade escolhida,
 considerando população, renda, internet, Pix e histórico de vendas online.
-<br><br>
-<b>Como funciona?</b><br>
+
+**Como funciona?**
 Cada município é descrito por 6 indicadores. O app calcula a distância
 estatística entre eles e retorna os 5 mais próximos — candidatos a um
 comportamento de compra similar.
-<br><br>
-<b>Fontes:</b> Olist (2018) · IBGE Censo 2022 · BCB PIX (2020–2026)
-<br><br>
-<a href="{GITHUB_URL}" target="_blank">Repositório no GitHub →</a>
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
+
+**Fontes:** Olist (2018) · IBGE Censo 2022 · BCB PIX (2020–2026)
+
+[Repositório no GitHub →]({GITHUB_URL})
+            """
+        )
 
     # --- Matching usa df_filtrado ---
     df_match, X, VI = build_matching_state(df_filtrado)
