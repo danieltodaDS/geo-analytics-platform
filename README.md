@@ -15,7 +15,7 @@ Responder essa pergunta exige causalidade — não correlação. Este projeto co
 ## Fases do Projeto
 
 ```
-Fase 1 — Analytics Engineering  ← foco atual
+Fase 1 — Analytics Engineering  ← concluída
 Ingestão → Raw Layer → dbt → Streamlit
 
 Fase 2 — Data Science            (roadmap)
@@ -73,12 +73,12 @@ Visualização — Streamlit
 | Retry de API | Tenacity |
 | Logging | structlog |
 | Orquestração local | Makefile |
-| Orquestração produção | GitHub Actions |
+| Orquestração produção | GitHub Actions (workflow_dispatch) |
 | Storage raw | Google Cloud Storage |
 | Warehouse | BigQuery |
 | Transformação | dbt Core |
 | Qualidade | dbt tests |
-| CI/CD | GitHub Actions |
+| CI (lint/test) | GitHub Actions |
 | Visualização | Streamlit + Plotly |
 | Harness / AI | Claude Code |
 
@@ -92,15 +92,17 @@ Visualização — Streamlit
 # Python 3.11 + uv
 uv sync
 
-# Autenticação GCP (para rodar contra BigQuery)
+# Autenticação GCP + criação dos datasets BigQuery + External Tables
 make auth
+make setup-gcloud
+make setup-external-tables
 ```
 
 ### Local
 
 Ingestão local (Parquet em `data/raw/`) + dbt contra BigQuery via ADC.
 
-> **Olist:** dataset estático baixado do Kaggle. Após baixar, mova os CSVs para `data/raw/olist_*` e execute `make ingest-local` para gerar os Parquets. Para subir ao GCS: `make olist-upload`.
+> **Olist:** dataset estático baixado do Kaggle ([Brazilian E-Commerce Public Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)). Após baixar, extraia os CSVs em `data/olist/` (ex: `data/olist/olist_orders_dataset.csv`). Execute `make ingest-local` para gerar os Parquets. Para subir ao GCS: `make olist-upload`.
 
 ```bash
 make pipeline-local   # ingestão + dbt build + testes
@@ -162,10 +164,14 @@ geo-analytics-platform/
 │   ├── src/                ← scripts de ingestão por fonte
 │   └── tests/
 ├── dbt/
-│   └── models/
-│       ├── staging/
-│       ├── intermediate/
-│       └── marts/
+│   ├── models/
+│   │   ├── staging/
+│   │   ├── intermediate/
+│   │   └── marts/
+│   ├── macros/
+│   ├── dbt_project.yml
+│   ├── profiles.yml
+│   └── packages.yml
 ├── streamlit/
 ├── Makefile
 └── pyproject.toml
