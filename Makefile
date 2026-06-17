@@ -3,7 +3,7 @@ include .env
 export
 endif
 
-.PHONY: pipeline ingest transform test streamlit auth setup-gcloud setup-external-tables cost
+.PHONY: pipeline-local pipeline-remote ingest-local ingest-remote transform-local transform-remote test streamlit auth setup-gcloud setup-external-tables cost
 
 auth:
 	gcloud auth login
@@ -21,16 +21,18 @@ setup-gcloud: auth
 setup-external-tables:
 	bash infra/setup_external_tables.sh
 
-pipeline: ingest transform test
+# --- Local (executa na máquina, escreve em data/raw/ ou BQ via ADC) ---
 
-ingest:
+pipeline-local: ingest-local transform-local test
+
+ingest-local:
 	uv run python ingestion/src/olist.py
 	uv run python ingestion/src/ibge_localidades.py
 	uv run python ingestion/src/ibge_censo.py
 	uv run python ingestion/src/bcb_pix.py
 
-transform:
-	cd dbt && uv run dbt run --profiles-dir .
+transform-local:
+	cd dbt && uv run dbt build --profiles-dir .
 
 test:
 	uv run pytest ingestion/tests/
@@ -38,6 +40,16 @@ test:
 
 streamlit:
 	uv run streamlit run streamlit/app.py
+
+# --- Remoto (aciona GitHub Actions via gh CLI) ---
+
+pipeline-remote: ingest-remote transform-remote
+
+ingest-remote:
+	gh workflow run ingest.yml --ref main --field source=all
+
+transform-remote:
+	gh workflow run transform.yml --ref main
 
 cost:
 	@echo "=== BigQuery — últimos 30 dias ==="
