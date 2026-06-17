@@ -329,3 +329,14 @@
 **Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — ingest ibge_censo + bcb_pix → passo-4 (External Tables) → transform.yml remoto pendentes
 
 ---
+
+**2026-06-16 (continuação 5)**
+- `ibge_censo.py` timeout aumentado de 60 → 180s (falhas de timeout na API SIDRA)
+- PR #3 criado (feat/fase-4c-remoto → main); CI passou (pytest + dbt parse)
+- ingest.yml disparado para todas as fontes; IBGE e BCB PIX carregados no GCS
+- passo-4 executado: 13 External Tables criadas no dataset `raw` com sucesso
+
+**Última etapa concluída:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — passo-5a OK (dataset landing removido, 4 datasets finais: raw/staging/intermediate/marts)
+**Em andamento:** Feature 8 — CI/CD + Infra — fase 4c — Produtizar — transform.yml remoto pendente
+
+---
