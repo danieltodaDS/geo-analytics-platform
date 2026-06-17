@@ -32,3 +32,4 @@ dbt/dbt_packages/
 streamlit-key.json
 docs/hash_map.txt
 docs/session_log.md
+infra/
