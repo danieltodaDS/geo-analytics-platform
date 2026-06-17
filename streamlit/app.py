@@ -37,7 +37,12 @@ RATIO_THRESHOLDS = (0.30, 0.70)
 
 @st.cache_data(ttl=3600)
 def load_data() -> pd.DataFrame:
-    if "gcp_service_account" in st.secrets:
+    try:
+        has_sa = "gcp_service_account" in st.secrets
+    except Exception:
+        has_sa = False
+
+    if has_sa:
         # Streamlit Community Cloud: credenciais via st.secrets
         credentials = service_account.Credentials.from_service_account_info(
             st.secrets["gcp_service_account"],
@@ -183,12 +188,12 @@ def main() -> None:
 
     st.dataframe(
         pd.DataFrame(rows).set_index("#"),
-        use_container_width=True,
+        width="stretch",
         hide_index=False,
     )
 
     st.subheader("Comparativo de covariáveis")
-    st.plotly_chart(plot_small_multiples(alvo, matches), use_container_width=True)
+    st.plotly_chart(plot_small_multiples(alvo, matches), width="stretch")
 
 
 if __name__ == "__main__":
