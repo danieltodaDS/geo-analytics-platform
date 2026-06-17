@@ -158,28 +158,6 @@ def main() -> None:
     st.title("Municípios Similares")
     st.caption("Selecione um município para encontrar os 5 mais parecidos com base em perfil socioeconômico e de e-commerce.")
 
-    with st.expander("Sobre este app"):
-        st.markdown(
-            f"""
-**Qual problema resolve?**
-Empresas de e-commerce precisam escolher onde expandir — mas comparar
-milhares de municípios manualmente é inviável. Este app encontra
-automaticamente os municípios brasileiros mais parecidos com qualquer
-cidade que você escolher, considerando tamanho de população, renda,
-acesso à internet, uso de Pix e histórico de vendas online.
-
-**Como funciona?**
-Cada município é descrito por 6 indicadores socioeconômicos e de
-e-commerce. O app calcula a distância estatística entre eles (Distância
-de Mahalanobis) e retorna os 5 mais próximos — os pares mais fortes
-candidatos a um comportamento de compra similar.
-
-**Fontes de dados:** Olist (2018) · IBGE Censo 2022 · Banco Central (PIX 2020–2026)
-
-Para detalhes técnicos, acesse o [repositório no GitHub]({GITHUB_URL}).
-            """
-        )
-
     df = load_data()
 
     # --- Sidebar: filtros ---
@@ -220,6 +198,35 @@ Para detalhes técnicos, acesse o [repositório no GitHub]({GITHUB_URL}).
         df_filtrado = df_filtrado[df_filtrado["uf_sigla"].isin(sel_uf)]
 
     st.sidebar.caption(f"{len(df_filtrado)} municípios no conjunto filtrado.")
+
+    st.sidebar.divider()
+    st.sidebar.markdown(
+        f"""
+<div style="
+    background-color: #f0f2f6;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+">
+<b>Qual problema resolve?</b><br>
+Empresas de e-commerce precisam escolher onde expandir — mas comparar
+milhares de municípios manualmente é inviável. Este app encontra
+automaticamente os municípios mais parecidos com qualquer cidade escolhida,
+considerando população, renda, internet, Pix e histórico de vendas online.
+<br><br>
+<b>Como funciona?</b><br>
+Cada município é descrito por 6 indicadores. O app calcula a distância
+estatística entre eles e retorna os 5 mais próximos — candidatos a um
+comportamento de compra similar.
+<br><br>
+<b>Fontes:</b> Olist (2018) · IBGE Censo 2022 · BCB PIX (2020–2026)
+<br><br>
+<a href="{GITHUB_URL}" target="_blank">Repositório no GitHub →</a>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # --- Matching usa df_filtrado ---
     df_match, X, VI = build_matching_state(df_filtrado)
