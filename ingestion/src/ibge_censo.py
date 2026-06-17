@@ -12,7 +12,7 @@ from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponen
 
 log = structlog.get_logger()
 
-_TIMEOUT = 60
+_TIMEOUT = 180
 _SLEEP_ENTRE_CHAMADAS = 0.5
 
 # c2072/77585 = existência de internet = Sim; c63/95826 = condição de ocupação = Total
