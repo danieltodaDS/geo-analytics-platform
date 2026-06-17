@@ -16,7 +16,7 @@ Responder essa pergunta exige causalidade — não correlação. Este projeto co
 
 ```
 Fase 1 — Analytics Engineering  ← foco atual
-Ingestão → Raw Layer → dbt → Qualidade → Streamlit
+Ingestão → Raw Layer → dbt → Streamlit
 
 Fase 2 — Data Science            (roadmap)
 Matching Estatístico + Diferença em Diferenças
@@ -40,35 +40,26 @@ Covariáveis Municipais
                     ↓
 
 Ingestão
-├── Local:      make pipeline → scripts Python
-└── Produção:   Cloud Scheduler → Cloud Run Job → scripts Python
+├── Local:      make ingest-local → scripts Python → Parquet em data/raw/
+└── Produção:   GitHub Actions (workflow_dispatch) → scripts Python → GCS
 
                     ↓
 
 Raw Layer — Google Cloud Storage
-gs://bucket/raw/{fonte}/year=X/month=X/day=X/data.parquet
+gs://geo-analytics-platform-raw/raw/{fonte}/year=X/month=X/day=X/data.parquet
 
                     ↓
 
-Warehouse — BigQuery
-├── raw          ← carga direta do GCS, sem transformação
+Warehouse — BigQuery (External Tables sobre GCS)
+├── raw          ← External Tables sobre Parquets no GCS
 ├── staging      ← limpeza, tipagem, geocodificação (dbt)
 ├── intermediate ← joins entre fontes, schema comum, regras de negócio (dbt)
 └── marts        ← modelos finais prontos para consumo (dbt)
 
                     ↓
 
-Qualidade — Elementary
-├── Freshness por source
-├── Anomalias de volume
-└── Dashboard de qualidade
-
-                    ↓
-
 Visualização — Streamlit
-├── Mapa de municípios com covariáveis
-├── Distribuição de métricas por região
-└── Comparação de perfil entre regiões candidatas
+└── Análise exploratória e matching de municípios similares
 ```
 
 ---
@@ -82,13 +73,12 @@ Visualização — Streamlit
 | Retry de API | Tenacity |
 | Logging | structlog |
 | Orquestração local | Makefile |
-| Orquestração produção | Cloud Scheduler + Cloud Run |
+| Orquestração produção | GitHub Actions |
 | Storage raw | Google Cloud Storage |
 | Warehouse | BigQuery |
 | Transformação | dbt Core |
-| Qualidade | dbt tests + Elementary |
+| Qualidade | dbt tests |
 | CI/CD | GitHub Actions |
-| IaC | Terraform |
 | Visualização | Streamlit + Plotly |
 | Harness / AI | Claude Code |
 
@@ -96,37 +86,44 @@ Visualização — Streamlit
 
 ## Como Rodar
 
-O pipeline segue uma progressão em três fases. Cada fase é pré-requisito da seguinte.
-
-### Local A — sem dependência de cloud
-
-Valida toda a lógica do pipeline sem criar nenhum recurso GCP.
+### Pré-requisitos
 
 ```bash
-make pipeline    # ingestão → Parquet em data/raw/ + dbt contra arquivos locais
-make ingest      # apenas ingestão
-make transform   # apenas dbt
-make test        # pytest + dbt test
+# Python 3.11 + uv
+uv sync
+
+# Autenticação GCP (para rodar contra BigQuery)
+make auth
 ```
 
-### Local B — dbt contra BigQuery
+### Local
 
-Mesmos scripts de ingestão. dbt passa a rodar contra o BigQuery real.
+Ingestão local (Parquet em `data/raw/`) + dbt contra BigQuery via ADC.
+
+> **Olist:** dataset estático baixado do Kaggle. Após baixar, mova os CSVs para `data/raw/olist_*` e execute `make ingest-local` para gerar os Parquets. Para subir ao GCS: `make olist-upload`.
 
 ```bash
-# Pré-requisito
-gcloud auth application-default login
-
-make pipeline    # Parquet local + dbt → BigQuery
+make pipeline-local   # ingestão + dbt build + testes
+make ingest-local     # apenas ingestão
+make transform-local  # apenas dbt build
+make test             # pytest + dbt test
+make streamlit        # app local contra BigQuery
 ```
 
-### Remoto — GCP em produção
-
-Após Local B validado e Terraform provisionado.
+### Produção (GitHub Actions)
 
 ```bash
-# Deploy via CI/CD (GitHub Actions) — não rodar manualmente
-# Ver .github/workflows/deploy.yml
+make pipeline-remote    # ingest + transform sequencial via Actions
+make ingest-remote      # apenas ingestão (todas as fontes dinâmicas)
+make transform-remote   # apenas dbt build
+```
+
+Ou pelo painel do GitHub: **Actions → Pipeline / Ingest / Transform → Run workflow**.
+
+### Monitoramento de custos
+
+```bash
+make cost   # BigQuery jobs (últimos 30 dias) + GCS storage
 ```
 
 ---
@@ -151,17 +148,16 @@ Após Local B validado e Terraform provisionado.
 ```
 geo-analytics-platform/
 ├── .github/workflows/
-│   ├── ci.yml              ← pytest + dbt compile + dbt test + terraform plan
-│   └── deploy.yml          ← build Docker + push + deploy Cloud Run
+│   ├── ci.yml              ← pytest + dbt parse (a cada PR/push)
+│   ├── ingest.yml          ← ingestão por fonte (workflow_dispatch)
+│   ├── transform.yml       ← dbt build completo (workflow_dispatch)
+│   └── pipeline.yml        ← ingest + transform sequencial (workflow_dispatch)
 ├── docs/
-│   ├── adr/                ← decisões arquiteturais (ADR-001 a ADR-006)
-│   ├── understanding/      ← entendimento das fontes (pós-exploração)
-│   └── prompts/            ← prompts Claude Code por feature
-├── exploration/            ← notebooks exploratórios (não vão para produção)
-├── specs/                  ← specs por feature (pós-entendimento, pré-código)
-│   ├── ingestion/
-│   ├── dbt/
-│   └── streamlit/
+│   ├── adr/                ← decisões arquiteturais
+│   ├── normative/          ← convenções e regras de qualidade
+│   ├── roadmap.md
+│   └── backlog.md
+├── exploration/            ← notebooks exploratórios (gitignored)
 ├── ingestion/
 │   ├── src/                ← scripts de ingestão por fonte
 │   └── tests/
@@ -171,9 +167,8 @@ geo-analytics-platform/
 │       ├── intermediate/
 │       └── marts/
 ├── streamlit/
-├── terraform/
 ├── Makefile
-└── CLAUDE.md
+└── pyproject.toml
 ```
 
 ---
@@ -183,21 +178,6 @@ geo-analytics-platform/
 | Documento | Conteúdo |
 |---|---|
 | [`docs/adr/`](docs/adr/) | Decisões arquiteturais com contexto e alternativas descartadas |
-| [`docs/understanding/`](docs/understanding/) | Schema real das APIs, edge cases observados na exploração |
-| [`specs/ingestion/`](specs/ingestion/) | Contratos de ingestão — Pydantic models, retry, testes obrigatórios |
-| [`geo_lift_scope.md`](geo_lift_scope.md) | Escopo congelado v1, ciclo de desenvolvimento, convenções |
-
----
-
-## Ciclo de Desenvolvimento
-
-Toda feature segue quatro etapas obrigatórias antes de qualquer código de produção:
-
-```
-1. Explorar   → notebook em exploration/
-2. Entender   → docs/understanding/{fonte}.md
-3. Especificar → specs/{dominio}/{feature}.md
-4. Produtizar  → código + testes
-```
-
-Cada etapa gera um commit atômico separado.
+| [`docs/normative/`](docs/normative/) | Convenções de código, qualidade de dados e contratos entre camadas |
+| [`docs/roadmap.md`](docs/roadmap.md) | Escopo, sequência de construção e fases futuras |
+| [`docs/backlog.md`](docs/backlog.md) | Itens pós-v1 (inferência causal, segmentação, agentes) |
