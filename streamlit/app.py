@@ -34,6 +34,8 @@ FEATURE_LABELS = {
 
 RATIO_THRESHOLDS = (0.30, 0.70)
 
+GITHUB_URL = "https://github.com/danieltodaDS/geo-analytics-platform"
+
 CATEGORIAS_POPULACAO = [
     'Micro (< 10 mil)',
     'Pequeno (10–50 mil)',
@@ -155,6 +157,28 @@ def main() -> None:
     st.set_page_config(page_title="Geo Analytics — Municípios Similares", layout="wide")
     st.title("Municípios Similares")
     st.caption("Selecione um município para encontrar os 5 mais parecidos com base em perfil socioeconômico e de e-commerce.")
+
+    with st.expander("Sobre este app"):
+        st.markdown(
+            f"""
+**Qual problema resolve?**
+Empresas de e-commerce precisam escolher onde expandir — mas comparar
+milhares de municípios manualmente é inviável. Este app encontra
+automaticamente os municípios brasileiros mais parecidos com qualquer
+cidade que você escolher, considerando tamanho de população, renda,
+acesso à internet, uso de Pix e histórico de vendas online.
+
+**Como funciona?**
+Cada município é descrito por 6 indicadores socioeconômicos e de
+e-commerce. O app calcula a distância estatística entre eles (Distância
+de Mahalanobis) e retorna os 5 mais próximos — os pares mais fortes
+candidatos a um comportamento de compra similar.
+
+**Fontes de dados:** Olist (2018) · IBGE Censo 2022 · Banco Central (PIX 2020–2026)
+
+Para detalhes técnicos, acesse o [repositório no GitHub]({GITHUB_URL}).
+            """
+        )
 
     df = load_data()
 
