@@ -32,7 +32,10 @@ dbt/dbt_packages/
 streamlit-key.json
 docs/hash_map.txt
 docs/session_log.md
+
 # Artefatos de desenvolvimento interno
 specs/
 docs/understanding/
 infra/Makefile.setup
+.claude/
+.devcontainer/
