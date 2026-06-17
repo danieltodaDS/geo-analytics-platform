@@ -337,8 +337,8 @@ models:
               values: ['Micro (< 10 mil)', 'Pequeno (10–50 mil)', 'Médio (50–200 mil)', 'Grande (≥ 200 mil)']
               quote: true
       - name: categoria_olist
-        description: "Nível de presença Olist por total de pedidos. 'Sem presença' sem dados no mart atual (INNER JOIN garante presença Olist)."
+        description: "Nível de presença Olist por penetracao_olist (clientes_unicos/populacao_residente): Baixa (<0.01%), Média (0.01–0.03%), Alta (≥0.03%). 'Sem presença' dead code mantido por completude semântica (INNER JOIN garante presença Olist)."
         data_tests:
           - accepted_values:
-              values: ['Sem presença', 'Baixa (1–10)', 'Média (11–100)', 'Alta (> 100)']
+              values: ['Sem presença', 'Baixa', 'Média', 'Alta']
               quote: true

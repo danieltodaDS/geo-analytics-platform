@@ -23,14 +23,20 @@ DISPLAY_FEATURES = [
     "renda_media_per_capita",
     "pct_domicilios_com_internet",
     "penetracao_olist",
+    "ticket_medio",
+    "pct_pagamento_cartao",
 ]
 
 FEATURE_LABELS = {
     "populacao_residente": "População residente",
     "renda_media_per_capita": "Renda média per capita (R$)",
     "pct_domicilios_com_internet": "Domicílios c/ internet (%)",
-    "penetracao_olist": "Penetração Olist (pedidos/hab)",
+    "penetracao_olist": "Penetração Olist (clientes/hab)",
+    "ticket_medio": "Ticket médio (R$)",
+    "pct_pagamento_cartao": "Pagamento em cartão (%)",
 }
+
+FEATURES_PCT = {"pct_domicilios_com_internet", "pct_pagamento_cartao"}
 
 RATIO_THRESHOLDS = (0.30, 0.70)
 
@@ -44,9 +50,9 @@ CATEGORIAS_POPULACAO = [
 ]
 CATEGORIAS_OLIST = [
     'Sem presença',
-    'Baixa (1–10)',
-    'Média (11–100)',
-    'Alta (> 100)',
+    'Baixa',
+    'Média',
+    'Alta',
 ]
 
 
@@ -124,16 +130,17 @@ def plot_small_multiples(alvo: pd.Series, matches: pd.DataFrame) -> go.Figure:
 
     fig = make_subplots(
         rows=2,
-        cols=2,
+        cols=3,
         subplot_titles=[FEATURE_LABELS[f] for f in DISPLAY_FEATURES],
     )
 
     for i, feat in enumerate(DISPLAY_FEATURES):
-        row, col = divmod(i, 2)
+        row, col = divmod(i, 3)
+        y_values = todos[feat].astype(float) * (100 if feat in FEATURES_PCT else 1)
         fig.add_trace(
             go.Bar(
                 x=labels,
-                y=todos[feat].astype(float).tolist(),
+                y=y_values.tolist(),
                 marker_color=cores,
                 showlegend=False,
             ),
@@ -143,12 +150,14 @@ def plot_small_multiples(alvo: pd.Series, matches: pd.DataFrame) -> go.Figure:
         fig.update_yaxes(rangemode="tozero", row=row + 1, col=col + 1)
 
     fig.update_layout(
-        height=520,
+        height=640,
         margin=dict(t=60, b=20),
         xaxis_tickangle=-20,
         xaxis2_tickangle=-20,
         xaxis3_tickangle=-20,
         xaxis4_tickangle=-20,
+        xaxis5_tickangle=-20,
+        xaxis6_tickangle=-20,
     )
     return fig
 
@@ -199,21 +208,22 @@ def main() -> None:
 
     st.sidebar.caption(f"{len(df_filtrado)} municípios no conjunto filtrado.")
 
+    if len(df_filtrado) < 10:
+        st.warning(
+            f"{len(df_filtrado)} município(s) encontrado(s) — mínimo necessário é 10 para o cálculo de similaridade. "
+            "Nota: apenas municípios com presença da Olist aparecem na lista."
+        )
+        return
+
     st.sidebar.divider()
     with st.sidebar.container(border=True):
         st.markdown(
             f"""
 **ℹ️ Sobre este app**
 
-Empresas de e-commerce precisam escolher onde expandir — mas comparar
-milhares de municípios manualmente é inviável. Este app encontra
-automaticamente os municípios mais parecidos com qualquer cidade escolhida,
-considerando população, renda, internet, Pix e histórico de vendas online.
+Um problema comum em times de produto em e-commerce: como avaliar se a expansão para novos mercados foi bem-sucedida? Uma abordagem é comparar dois municípios — mas isso só é válido se eles forem realmente comparáveis entre si.
 
-**Como funciona?**
-Cada município é descrito por 6 indicadores. O app calcula a distância
-estatística entre eles e retorna os 5 mais próximos — candidatos a um
-comportamento de compra similar.
+Este app é um projeto end-to-end de Analytics Engineering que ajuda a identificar municípios similares a um escolhido, com base em análise estatística de 6 indicadores socioeconômicos e de e-commerce construídos a partir de dados públicos.
 
 **Fontes:** Olist (2018) · IBGE Censo 2022 · BCB PIX (2020–2026)
 
@@ -251,6 +261,28 @@ comportamento de compra similar.
 
     alvo = df_match[df_match["id_municipio"] == municipio_id].iloc[0]
     matches = get_top_matches(municipio_id, df_match, X, VI)
+
+    col_a, col_b, col_c, col_d = st.columns(4)
+    col_a.metric(
+        label="População residente",
+        value=f"{int(alvo['populacao_residente']):,}".replace(",", "."),
+        delta=alvo["categoria_populacao"],
+        delta_color="off",
+    )
+    col_b.metric(
+        label="Penetração Olist",
+        value=f"{alvo['penetracao_olist']:.4%}",
+        delta=alvo["categoria_olist"],
+        delta_color="off",
+    )
+    col_c.metric(
+        label="Renda média per capita",
+        value=f"R$ {alvo['renda_media_per_capita'] or 0:,.0f}".replace(",", "."),
+    )
+    col_d.metric(
+        label="Domicílios c/ internet",
+        value=f"{(alvo['pct_domicilios_com_internet'] or 0):.1%}",
+    )
 
     st.subheader("Municípios mais similares")
 

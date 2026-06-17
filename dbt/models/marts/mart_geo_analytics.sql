@@ -88,10 +88,10 @@ final as (
             ELSE                                     'Grande (≥ 200 mil)'
         END                                                                                      AS categoria_populacao,
         CASE
-            WHEN o.total_pedidos IS NULL THEN 'Sem presença'
-            WHEN o.total_pedidos <= 10   THEN 'Baixa (1–10)'
-            WHEN o.total_pedidos <= 100  THEN 'Média (11–100)'
-            ELSE                              'Alta (> 100)'
+            WHEN CAST(o.clientes_unicos AS FLOAT64) / NULLIF(p.populacao_residente, 0) IS NULL  THEN 'Sem presença'
+            WHEN CAST(o.clientes_unicos AS FLOAT64) / NULLIF(p.populacao_residente, 0) < 0.0001 THEN 'Baixa'
+            WHEN CAST(o.clientes_unicos AS FLOAT64) / NULLIF(p.populacao_residente, 0) < 0.0003 THEN 'Média'
+            ELSE                                                                                      'Alta'
         END                                                                                      AS categoria_olist
 
     from olist_2018 o
