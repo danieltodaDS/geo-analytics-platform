@@ -2,6 +2,8 @@
 
 Pipeline de Analytics Engineering para mensuração de causalidade em expansão geográfica de produto digital, construído sobre dados públicos brasileiros no GCP.
 
+**[→ Ver aplicação ao vivo](https://geo-analytics-platform-em9nziezhlvewacdnpztzm.streamlit.app/)**
+
 ---
 
 ## Problema de Negócio
