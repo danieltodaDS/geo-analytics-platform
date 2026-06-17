@@ -1,0 +1,53 @@
+name: Pipeline
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - run: uv sync
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/549617161512/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: github-actions@data-pipeline-lab-497514.iam.gserviceaccount.com
+
+      - name: Ingest
+        env:
+          RAW_BASE_PATH: gs://geo-analytics-platform-raw/raw
+        run: |
+          uv run python ingestion/src/ibge_localidades.py
+          uv run python ingestion/src/ibge_censo.py
+          uv run python ingestion/src/bcb_pix.py
+
+  transform:
+    runs-on: ubuntu-latest
+    needs: ingest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - run: uv sync
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/549617161512/locations/global/workloadIdentityPools/github-actions/providers/github
+          service_account: github-actions@data-pipeline-lab-497514.iam.gserviceaccount.com
+
+      - name: dbt build
+        run: cd dbt && uv run dbt deps --profiles-dir . && uv run dbt build --profiles-dir .

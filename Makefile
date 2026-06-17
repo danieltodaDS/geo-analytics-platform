@@ -41,9 +41,24 @@ test:
 streamlit:
 	uv run streamlit run streamlit/app.py
 
+# Olist é estático (Kaggle) — não tem ingestão remota via Actions.
+# Para subir ao GCS pela primeira vez: make olist-upload (requer ADC + gsutil)
+olist-upload:
+	gsutil -m cp -r \
+	  data/raw/olist_customers \
+	  data/raw/olist_orders \
+	  data/raw/olist_order_items \
+	  data/raw/olist_order_payments \
+	  data/raw/olist_order_reviews \
+	  data/raw/olist_geolocation \
+	  data/raw/olist_products \
+	  data/raw/olist_sellers \
+	  gs://geo-analytics-platform-raw/raw/
+
 # --- Remoto (aciona GitHub Actions via gh CLI) ---
 
-pipeline-remote: ingest-remote transform-remote
+pipeline-remote:
+	gh workflow run pipeline.yml --ref main
 
 ingest-remote:
 	gh workflow run ingest.yml --ref main --field source=all

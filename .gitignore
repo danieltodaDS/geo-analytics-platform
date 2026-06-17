@@ -33,3 +33,7 @@ streamlit-key.json
 docs/hash_map.txt
 docs/session_log.md
 infra/
+
+# Artefatos de desenvolvimento interno
+specs/
+docs/understanding/
