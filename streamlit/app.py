@@ -303,6 +303,7 @@ Este app é um projeto end-to-end de Analytics Engineering que ajuda a identific
     )
 
     st.subheader("Dados comparativos detalhados")
+    st.caption("Para melhor visualização, acesse pelo desktop.")
     st.plotly_chart(plot_small_multiples(alvo, matches), width="stretch")
 
 
