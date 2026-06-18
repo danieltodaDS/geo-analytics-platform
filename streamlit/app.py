@@ -15,7 +15,7 @@ FEATURES = [
     "pct_domicilios_com_internet",
     "penetracao_olist",
     "ticket_medio",
-    "pct_pagamento_cartao",
+    "transacoes_pix_per_capita",
 ]
 
 DISPLAY_FEATURES = [
@@ -24,7 +24,7 @@ DISPLAY_FEATURES = [
     "pct_domicilios_com_internet",
     "penetracao_olist",
     "ticket_medio",
-    "pct_pagamento_cartao",
+    "transacoes_pix_per_capita",
 ]
 
 FEATURE_LABELS = {
@@ -33,10 +33,10 @@ FEATURE_LABELS = {
     "pct_domicilios_com_internet": "Domicílios c/ internet (%)",
     "penetracao_olist": "Penetração Olist (clientes/hab)",
     "ticket_medio": "Ticket médio (R$)",
-    "pct_pagamento_cartao": "Pagamento em cartão (%)",
+    "transacoes_pix_per_capita": "Transações PIX per capita",
 }
 
-FEATURES_PCT = {"pct_domicilios_com_internet", "pct_pagamento_cartao"}
+FEATURES_PCT = {"pct_domicilios_com_internet"}
 
 RATIO_THRESHOLDS = (0.30, 0.70)
 
