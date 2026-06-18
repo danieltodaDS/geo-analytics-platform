@@ -129,13 +129,13 @@ def plot_small_multiples(alvo: pd.Series, matches: pd.DataFrame) -> go.Figure:
     cores = ["#1f77b4"] + ["#aec7e8"] * len(matches)
 
     fig = make_subplots(
-        rows=2,
-        cols=3,
+        rows=3,
+        cols=2,
         subplot_titles=[FEATURE_LABELS[f] for f in DISPLAY_FEATURES],
     )
 
     for i, feat in enumerate(DISPLAY_FEATURES):
-        row, col = divmod(i, 3)
+        row, col = divmod(i, 2)
         y_values = todos[feat].astype(float) * (100 if feat in FEATURES_PCT else 1)
         fig.add_trace(
             go.Bar(
@@ -150,7 +150,7 @@ def plot_small_multiples(alvo: pd.Series, matches: pd.DataFrame) -> go.Figure:
         fig.update_yaxes(rangemode="tozero", row=row + 1, col=col + 1)
 
     fig.update_layout(
-        height=640,
+        height=900,
         margin=dict(t=60, b=20),
         xaxis_tickangle=-20,
         xaxis2_tickangle=-20,
