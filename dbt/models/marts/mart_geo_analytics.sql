@@ -78,7 +78,7 @@ final as (
         -- derivadas cruzadas
         o.receita_total / nullif(p.populacao_residente, 0)                                     as receita_por_habitante,
         CAST(o.total_pedidos AS FLOAT64) / nullif(p.populacao_residente, 0)                     as pedidos_por_habitante,
-        CAST(o.clientes_unicos AS FLOAT64) / nullif(p.populacao_residente, 0)                     as penetracao_olist,
+        CAST(o.clientes_unicos AS FLOAT64) / nullif(p.populacao_residente, 0) * 10000             as penetracao_olist,
 
         -- categorias para filtros
         CASE
@@ -88,10 +88,10 @@ final as (
             ELSE                                     'Grande (≥ 200 mil)'
         END                                                                                      AS categoria_populacao,
         CASE
-            WHEN CAST(o.clientes_unicos AS FLOAT64) / NULLIF(p.populacao_residente, 0) IS NULL  THEN 'Sem presença'
-            WHEN CAST(o.clientes_unicos AS FLOAT64) / NULLIF(p.populacao_residente, 0) < 0.0001 THEN 'Baixa'
-            WHEN CAST(o.clientes_unicos AS FLOAT64) / NULLIF(p.populacao_residente, 0) < 0.0003 THEN 'Média'
-            ELSE                                                                                      'Alta'
+            WHEN CAST(o.clientes_unicos AS FLOAT64) / NULLIF(p.populacao_residente, 0) IS NULL THEN 'Sem presença'
+            WHEN CAST(o.clientes_unicos AS FLOAT64) / NULLIF(p.populacao_residente, 0) * 10000 < 1  THEN 'Baixa'
+            WHEN CAST(o.clientes_unicos AS FLOAT64) / NULLIF(p.populacao_residente, 0) * 10000 < 3  THEN 'Média'
+            ELSE                                                                                          'Alta'
         END                                                                                      AS categoria_olist
 
     from olist_2018 o

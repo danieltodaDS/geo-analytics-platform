@@ -31,7 +31,7 @@ FEATURE_LABELS = {
     "populacao_residente": "População residente",
     "renda_media_per_capita": "Renda média per capita (R$)",
     "pct_domicilios_com_internet": "Domicílios c/ internet (%)",
-    "penetracao_olist": "Penetração Olist (clientes/hab)",
+    "penetracao_olist": "Penetração Olist (clientes/10k hab)",
     "ticket_medio": "Ticket médio (R$)",
     "transacoes_pix_per_capita": "Transações PIX per capita",
 }
@@ -271,7 +271,7 @@ Este app é um projeto end-to-end de Analytics Engineering que ajuda a identific
     )
     col_b.metric(
         label="Penetração Olist",
-        value=f"{alvo['penetracao_olist']:.4%}",
+        value=f"{alvo['penetracao_olist']:.2f}",
         delta=alvo["categoria_olist"],
         delta_color="off",
     )
