@@ -19,7 +19,7 @@ renda as (
 internet as (
     select
         codigo_municipio,
-        pct_domicilios_com_internet
+        pct_domicilios_com_internet / 100.0    as pct_domicilios_com_internet
     from {{ ref('stg_ibge_censo_9936') }}
 )
 
