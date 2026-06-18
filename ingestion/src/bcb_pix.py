@@ -88,7 +88,7 @@ def run() -> None:
 
         today = datetime.now(tz=timezone.utc)
         base = os.environ.get("RAW_BASE_PATH", "data/raw")
-        dest = f"{base}/bcb_pix/year={today.year}/month={today.month:02d}/day={today.day:02d}/data.parquet"
+        dest = f"{base}/bcb_pix/ingestion_date={today.date()}/data.parquet"
         if not dest.startswith("gs://"):
             Path(dest).parent.mkdir(parents=True, exist_ok=True)
         df.to_parquet(dest, index=False, compression="snappy")

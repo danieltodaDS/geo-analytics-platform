@@ -149,9 +149,7 @@ def _process_table(
     dest = (
         Path(raw_base)
         / f"olist_{tabela}"
-        / f"year={today.year}"
-        / f"month={today.month:02d}"
-        / f"day={today.day:02d}"
+        / f"ingestion_date={today.date()}"
         / "data.parquet"
     )
     dest.parent.mkdir(parents=True, exist_ok=True)

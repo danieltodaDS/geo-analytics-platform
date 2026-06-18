@@ -1,5 +1,8 @@
 with source as (
     select * from {{ source('raw', 'ibge_censo_10295') }}
+    where ingestion_date = (
+        select max(ingestion_date) from {{ source('raw', 'ibge_censo_10295') }}
+    )
 )
 
 select

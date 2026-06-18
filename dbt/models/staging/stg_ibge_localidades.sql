@@ -1,5 +1,8 @@
 with source as (
     select * from {{ source('raw', 'ibge_localidades') }}
+    where ingestion_date = (
+        select max(ingestion_date) from {{ source('raw', 'ibge_localidades') }}
+    )
 ),
 
 deduped as (

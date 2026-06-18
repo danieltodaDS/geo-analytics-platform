@@ -26,7 +26,7 @@ for table in "${tables[@]}"; do
   bq rm -f --table "${PROJECT}:raw.${table}" 2>/dev/null || true
   bq query --nouse_legacy_sql --project_id="${PROJECT}" << EOF
 CREATE OR REPLACE EXTERNAL TABLE \`${PROJECT}.raw.${table}\`
-WITH PARTITION COLUMNS (year INT64, month INT64, day INT64)
+WITH PARTITION COLUMNS (ingestion_date DATE)
 OPTIONS (
   format = 'PARQUET',
   uris = ['gs://${BUCKET}/raw/${table}/*'],

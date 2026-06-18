@@ -1,5 +1,8 @@
 with source as (
     select * from {{ source('raw', 'bcb_pix') }}
+    where ingestion_date = (
+        select max(ingestion_date) from {{ source('raw', 'bcb_pix') }}
+    )
 )
 
 select
