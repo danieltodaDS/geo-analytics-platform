@@ -104,10 +104,11 @@ def get_top_matches(
     result = df_match.copy()
     result["distancia"] = distancias
 
-    mediana = np.median(distancias[np.arange(len(distancias)) != pos])
+    outros = distancias[np.arange(len(distancias)) != pos]
+    p10 = np.percentile(outros, 10)
     matches = result[result["id_municipio"] != municipio_id].nsmallest(k, "distancia")
     matches = matches.copy()
-    matches["ratio"] = matches["distancia"] / mediana
+    matches["ratio"] = matches["distancia"] / p10
     return matches
 
 
@@ -293,7 +294,7 @@ Este app é um projeto end-to-end de Analytics Engineering que ajuda a identific
             "#": i,
             "Município": r["nome_municipio"],
             "UF": r["uf_sigla"],
-            "Similaridade": label_sim,
+            "Similaridade": f"{label_sim} ({r['distancia']:.2f})",
         })
 
     st.dataframe(
