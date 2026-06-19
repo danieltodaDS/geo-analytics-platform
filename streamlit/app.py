@@ -271,7 +271,7 @@ Este app é um projeto end-to-end de Analytics Engineering que ajuda a identific
         delta_color="off",
     )
     col_b.metric(
-        label="Penetração Olist",
+        label="Penetração Olist (cli./10k hab)",
         value=f"{alvo['penetracao_olist']:.2f}",
         delta=alvo["categoria_olist"],
         delta_color="off",
