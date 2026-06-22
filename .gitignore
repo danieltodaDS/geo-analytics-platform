@@ -36,6 +36,7 @@ docs/session_log.md
 # Artefatos de desenvolvimento interno
 specs/
 docs/understanding/
+docs/aprofundamento/
 infra/Makefile.setup
 .claude/
 .devcontainer/
