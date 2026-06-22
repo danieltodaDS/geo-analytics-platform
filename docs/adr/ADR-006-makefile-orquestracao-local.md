@@ -3,6 +3,7 @@
 **Status:** Aceito
 **Supersede:** ADR-004
 **Data:** Junho/2026
+**Impactada por:** [ADR-011](ADR-011-olist-event-driven-ingest.md) — o target `olist-upload` passa a copiar CSVs para o bucket de entrada (`geo-analytics-platform-landing`), não mais para o bucket oficial de raw
 
 ---
 

@@ -2,6 +2,7 @@
 
 **Status:** Aceito
 **Data:** Junho/2026
+**Impactada por:** [ADR-011](ADR-011-olist-event-driven-ingest.md) — o mecanismo de escrita do Olist muda (Cloud Function em vez de `gcloud storage cp` direto); path e formato Parquet + Snappy + `ingestion_date` permanecem inalterados
 
 ---
 
@@ -38,4 +39,4 @@ A raw layer precisa de um formato que:
 
 - JSONL como fallback documentado para casos edge — nenhuma fonte da v1 usa JSONL
 - Scripts de ingestão dependem de `pyarrow` ou `pandas` para escrita — adicionados ao `requirements.txt`
-- Particionamento Hive-style no path: `raw/{fonte}/year=X/month=X/day=X/data.parquet` — BigQuery detecta automaticamente as partições
+- Particionamento Hive-style no path: `raw/{fonte}/ingestion_date=YYYY-MM-DD/data.parquet` — BigQuery detecta automaticamente as partições (ver ADR-010 para a migração de `year/month/day` para `ingestion_date`)
