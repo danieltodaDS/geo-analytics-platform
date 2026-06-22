@@ -1,6 +1,7 @@
 # Geo Analytics Platform — Roadmap
 
-> Este documento cobre o escopo e ciclo de desenvolvimento da v1.
+> **Status: CONCLUÍDO** — tag `v0.4-fase-4c-aditivos`
+> Este documento cobriu o escopo e ciclo de desenvolvimento da v1. Não é mais atualizado.
 > Desenvolvimentos futuros: [`docs/backlog.md`](backlog.md).
 
 ---
@@ -8,7 +9,7 @@
 ## Visão Geral
 
 ```
-Fase 1 — v1 (foco atual)
+Fase 1 — v1 (CONCLUÍDA — v0.4-fase-4c-aditivos)
 Analytics Engineering completo — local + remoto em produção
 Fontes: Olist + IBGE Localidades + Censo 2022 + BCB PIX
 Mart: mart_geo_analytics pronto para análise causal
