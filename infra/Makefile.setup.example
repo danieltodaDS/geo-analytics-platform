@@ -101,8 +101,10 @@ cf-1:
 
 # cf-2 — IAM da SA da Cloud Function (roles mínimas)
 # objectViewer no landing (leitura dos CSVs)
-# objectCreator no raw (escrita dos Parquets)
+# objectUser no raw (escrita dos Parquets — objectCreator não basta: gcsfs precisa de delete para upload multipart)
 # pubsub.publisher no Storage service agent — sem isso o Eventarc trigger nunca dispara
+# eventarc.eventReceiver na CF SA — sem isso o Eventarc não consegue invocar a função
+# run.invoker aplicado em cf-4, após o deploy criar o serviço Cloud Run
 cf-2:
 	gcloud storage service-agent --project=$(PROJECT)
 	gcloud storage buckets add-iam-policy-binding gs://$(LANDING_BUCKET) \
@@ -110,10 +112,13 @@ cf-2:
 	  --role="roles/storage.objectViewer"
 	gcloud storage buckets add-iam-policy-binding gs://$(BUCKET) \
 	  --member="serviceAccount:$(CF_SA)" \
-	  --role="roles/storage.objectCreator"
+	  --role="roles/storage.objectUser"
 	gcloud projects add-iam-policy-binding $(PROJECT) \
 	  --member="serviceAccount:service-$(PROJECT_NUMBER)@gs-project-accounts.iam.gserviceaccount.com" \
 	  --role="roles/pubsub.publisher"
+	gcloud projects add-iam-policy-binding $(PROJECT) \
+	  --member="serviceAccount:$(CF_SA)" \
+	  --role="roles/eventarc.eventReceiver"
 
 # cf-3 — APIs necessárias para Cloud Functions gen2 + Eventarc
 cf-3:
@@ -124,6 +129,7 @@ cf-3:
 	  run.googleapis.com
 
 # cf-4 — Deploy da Cloud Function (re-executar para atualizar código ou env vars)
+# run.invoker aplicado após o deploy: o serviço Cloud Run só existe depois que cf-4 cria a função
 cf-4:
 	gcloud functions deploy olist-ingest-trigger \
 	  --gen2 \
@@ -131,16 +137,19 @@ cf-4:
 	  --region=us-central1 \
 	  --source=ingestion/src \
 	  --entry-point=handle_event \
-	  --memory=512MiB \
+	  --memory=1GiB \
 	  --timeout=300s \
 	  --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
 	  --trigger-event-filters="bucket=$(LANDING_BUCKET)" \
-	  --trigger-event-filters-path-pattern="name=olist/**" \
 	  --trigger-location=us \
 	  --service-account=$(CF_SA) \
 	  --set-env-vars="RAW_BASE_PATH=gs://$(BUCKET)/raw"
+	gcloud run services add-iam-policy-binding olist-ingest-trigger \
+	  --region=us-central1 \
+	  --member="serviceAccount:$(CF_SA)" \
+	  --role="roles/run.invoker"
 
-# olist-upload — Depositar CSVs no landing bucket (aciona cf-4 via Eventarc)
+# olist-upload — Depositar CSVs no landing bucket (aciona a Cloud Function via Eventarc)
 # Pré-requisito: data/olist/ com os CSVs extraídos do Kaggle (diretório gitignored).
 olist-upload:
 	gcloud storage cp \
