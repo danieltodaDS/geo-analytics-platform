@@ -97,24 +97,32 @@ uv sync
 
 ### Provisionamento inicial (one-time)
 
-Executar uma única vez ao configurar o ambiente do zero.
+Copiar o template de configuração e ajustar as variáveis (`PROJECT`, `BUCKET`, `PROJECT_NUMBER`, `REPO`, `LANDING_BUCKET`):
 
 ```bash
-make auth                   # login GCP + ADC
-make setup-gcloud           # cria datasets BigQuery
+cp infra/Makefile.setup.example infra/Makefile.setup
 ```
 
-**Olist:** dataset estático do Kaggle ([Brazilian E-Commerce Public Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)). Extraia os CSVs em `data/olist/` (ex: `data/olist/olist_orders_dataset.csv`) e suba ao GCS:
+Em seguida, executar em ordem:
 
 ```bash
-make ingest-local           # gera Parquets em data/raw/
-make olist-upload           # sobe Parquets Olist para o GCS
+make -f infra/Makefile.setup auth                            # login GCP + ADC (owner)
+make -f infra/Makefile.setup base-1 base-2 base-3   # datasets BQ + buckets raw e landing
+make -f infra/Makefile.setup ci-1 ci-2 ci-3        # WIF + SA ingestão + IAM
+make -f infra/Makefile.setup cf-1 cf-2 cf-3        # SA + IAM + APIs da Cloud Function
+make -f infra/Makefile.setup cf-4                   # deploy Cloud Function
 ```
 
-Depois de todas as fontes dinâmicas no GCS (via `make ingest-remote` ou Actions):
+**Olist** — dataset estático do Kaggle ([Brazilian E-Commerce Public Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)). Extraia os CSVs em `data/olist/` e envie ao GCS:
 
 ```bash
-make setup-external-tables  # cria External Tables no dataset raw do BigQuery
+make -f infra/Makefile.setup olist-upload   # deposita CSVs → aciona cf-4 via Eventarc
+```
+
+Após todas as fontes dinâmicas no GCS (via `make ingest-remote` ou Actions):
+
+```bash
+make -f infra/Makefile.setup data-1   # External Tables no dataset raw do BigQuery
 ```
 
 ### Uso recorrente

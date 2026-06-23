@@ -133,7 +133,12 @@ def _process_table(
 ) -> None:
     log.info("olist.inicio_tabela", tabela=tabela)
 
-    csv_path = Path(olist_base) / csv_file
+    # guard leitura — Path() colapsa gs:// para gs:/
+    if olist_base.startswith("gs://"):
+        csv_path = f"{olist_base}/{csv_file}"
+    else:
+        csv_path = str(Path(olist_base) / csv_file)
+
     df = pd.read_csv(csv_path)
 
     if len(df) < _VOLUME_MINIMO[tabela]:
@@ -146,13 +151,18 @@ def _process_table(
 
     _validate_sample(df, model)
 
-    dest = (
-        Path(raw_base)
-        / f"olist_{tabela}"
-        / f"ingestion_date={today.date()}"
-        / "data.parquet"
-    )
-    dest.parent.mkdir(parents=True, exist_ok=True)
+    # guard escrita — mesma razão
+    if raw_base.startswith("gs://"):
+        dest = f"{raw_base}/olist_{tabela}/ingestion_date={today.date()}/data.parquet"
+    else:
+        dest = (
+            Path(raw_base)
+            / f"olist_{tabela}"
+            / f"ingestion_date={today.date()}"
+            / "data.parquet"
+        )
+        dest.parent.mkdir(parents=True, exist_ok=True)
+
     df.to_parquet(dest, index=False, compression="snappy")
     log.info("olist.parquet_gravado", tabela=tabela, destino_path=str(dest))
 

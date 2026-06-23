@@ -3,6 +3,7 @@
 **Status:** Aceito
 **Data:** Junho/2026
 **Supersede:** [ADR-002](ADR-002-cloud-run-scheduler.md)
+**Impactada por:** [ADR-011](ADR-011-olist-event-driven-ingest.md) — Olist passa de "trigger manual via make → raw bucket" para "trigger manual via make → landing bucket → Cloud Function → raw bucket"; GitHub Actions (`ingest.yml`) não cobre o Olist
 
 ---
 

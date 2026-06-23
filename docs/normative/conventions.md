@@ -117,21 +117,22 @@ O padrão de path é o mesmo em todas as fases. O que muda é a raiz:
 
 ### Estrutura do path (igual em todas as fases)
 
+> Padrão vigente a partir da tag `v0.4-fase-4c-aditivos` (ADR-010).
+
 ```
-{raiz}/{fonte}/year={YYYY}/month={MM}/day={DD}/data.parquet
+{raiz}/{fonte}/ingestion_date={YYYY-MM-DD}/data.parquet
 ```
 
 | Fonte | Path relativo |
 |---|---|
-| IBGE Localidades | `ibge_localidades/year=X/month=X/day=X/data.parquet` |
-| IBGE Censo 9514  | `ibge_censo_9514/year=X/month=X/day=X/data.parquet` |
-| IBGE Censo 10295 | `ibge_censo_10295/year=X/month=X/day=X/data.parquet` |
-| IBGE Censo 9936  | `ibge_censo_9936/year=X/month=X/day=X/data.parquet` |
-| BCB PIX | `bcb_pix/year=X/month=X/day=X/data.parquet` |
-| Olist | `olist/year=X/month=X/day=X/data.parquet` |
+| IBGE Localidades | `ibge_localidades/ingestion_date=YYYY-MM-DD/data.parquet` |
+| IBGE Censo 9514  | `ibge_censo_9514/ingestion_date=YYYY-MM-DD/data.parquet` |
+| IBGE Censo 10295 | `ibge_censo_10295/ingestion_date=YYYY-MM-DD/data.parquet` |
+| IBGE Censo 9936  | `ibge_censo_9936/ingestion_date=YYYY-MM-DD/data.parquet` |
+| BCB PIX | `bcb_pix/ingestion_date=YYYY-MM-DD/data.parquet` |
+| Olist | `olist/ingestion_date=YYYY-MM-DD/data.parquet` |
 
 Regras:
-- `month` e `day` sempre com dois dígitos zero-padded (`month=06`, não `month=6`)
 - Data = data de execução do script (UTC), não data do dado
 - Arquivo sempre chamado `data.parquet` — a partição está no path, não no nome
 - O destino (local vs GCS) é controlado pela variável de ambiente `RAW_BASE_PATH`
