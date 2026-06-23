@@ -1,0 +1,214 @@
+# Makefile de provisionamento GCP
+# Copiar para infra/Makefile.setup (gitignored) e ajustar as variáveis abaixo.
+# Pré-requisito: executar `make -f infra/Makefile.setup auth` antes de qualquer passo.
+
+PROJECT=your-gcp-project-id
+BUCKET=your-raw-bucket-name
+PROJECT_NUMBER=000000000000
+REPO=your-github-user/your-repo
+LANDING_BUCKET=your-landing-bucket-name
+CF_SA=olist-function@$(PROJECT).iam.gserviceaccount.com
+
+.PHONY: auth \
+        base-1 base-2 base-3 \
+        ci-1 ci-2 ci-3 \
+        cf-1 cf-2 cf-3 cf-4 olist-upload \
+        data-1 \
+        optional-1 \
+        provision
+
+# Auth de owner — para provisionamento (Makefile.setup apenas)
+# Não usar no dia a dia — o Makefile principal usa impersonation da SA de ingestão.
+auth:
+	gcloud auth login
+	gcloud auth application-default login
+
+# =============================================================================
+# BASE INFRA
+# =============================================================================
+
+# base-1 — Datasets BigQuery (pré-requisito de ci-3 e dbt)
+base-1:
+	gcloud config set project $(PROJECT)
+	-bq mk --dataset --location=US $(PROJECT):raw
+	-bq mk --dataset --location=US $(PROJECT):staging
+	-bq mk --dataset --location=US $(PROJECT):intermediate
+	-bq mk --dataset --location=US $(PROJECT):marts
+	bq ls --project_id=$(PROJECT)
+
+# base-2 — Bucket GCS raw
+base-2:
+	gcloud storage buckets create gs://$(BUCKET) \
+	  --location=US \
+	  --uniform-bucket-level-access
+
+# base-3 — Bucket GCS landing (trigger da Cloud Function via Eventarc)
+base-3:
+	gcloud storage buckets create gs://$(LANDING_BUCKET) \
+	  --location=US \
+	  --uniform-bucket-level-access
+
+# =============================================================================
+# GITHUB ACTIONS / WORKLOAD IDENTITY FEDERATION
+# =============================================================================
+
+# ci-1 — WIF pool e provider OIDC
+ci-1:
+	gcloud iam workload-identity-pools create github-actions \
+	  --location=global \
+	  --project=$(PROJECT) \
+	  --display-name="GitHub Actions"
+	gcloud iam workload-identity-pools providers create-oidc github \
+	  --location=global \
+	  --workload-identity-pool=github-actions \
+	  --project=$(PROJECT) \
+	  --issuer-uri="https://token.actions.githubusercontent.com" \
+	  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
+	  --attribute-condition="assertion.repository=='$(REPO)'"
+
+# ci-2 — SA de ingestão e binding ao WIF
+ci-2:
+	gcloud iam service-accounts create github-actions \
+	  --project=$(PROJECT) \
+	  --display-name="GitHub Actions"
+	gcloud iam service-accounts add-iam-policy-binding \
+	  github-actions@$(PROJECT).iam.gserviceaccount.com \
+	  --project=$(PROJECT) \
+	  --role="roles/iam.workloadIdentityUser" \
+	  --member="principalSet://iam.googleapis.com/projects/$(PROJECT_NUMBER)/locations/global/workloadIdentityPools/github-actions/attribute.repository/$(REPO)"
+
+# ci-3 — IAM da SA de ingestão (GCS raw + BigQuery)
+ci-3:
+	gcloud storage buckets add-iam-policy-binding gs://$(BUCKET) \
+	  --role=roles/storage.objectUser \
+	  --member=serviceAccount:github-actions@$(PROJECT).iam.gserviceaccount.com
+	gcloud projects add-iam-policy-binding $(PROJECT) \
+	  --role=roles/bigquery.dataEditor \
+	  --member=serviceAccount:github-actions@$(PROJECT).iam.gserviceaccount.com
+	gcloud projects add-iam-policy-binding $(PROJECT) \
+	  --role=roles/bigquery.jobUser \
+	  --member=serviceAccount:github-actions@$(PROJECT).iam.gserviceaccount.com
+
+# =============================================================================
+# CLOUD FUNCTION OLIST (ADR-011)
+# =============================================================================
+
+# cf-1 — SA da Cloud Function
+cf-1:
+	gcloud iam service-accounts create olist-function \
+	  --display-name="Cloud Function Olist Ingest" \
+	  --project=$(PROJECT)
+
+# cf-2 — IAM da SA da Cloud Function (roles mínimas)
+# objectViewer no landing (leitura dos CSVs)
+# objectCreator no raw (escrita dos Parquets)
+# pubsub.publisher no Storage service agent — sem isso o Eventarc trigger nunca dispara
+cf-2:
+	gcloud storage service-agent --project=$(PROJECT)
+	gcloud storage buckets add-iam-policy-binding gs://$(LANDING_BUCKET) \
+	  --member="serviceAccount:$(CF_SA)" \
+	  --role="roles/storage.objectViewer"
+	gcloud storage buckets add-iam-policy-binding gs://$(BUCKET) \
+	  --member="serviceAccount:$(CF_SA)" \
+	  --role="roles/storage.objectCreator"
+	gcloud projects add-iam-policy-binding $(PROJECT) \
+	  --member="serviceAccount:service-$(PROJECT_NUMBER)@gs-project-accounts.iam.gserviceaccount.com" \
+	  --role="roles/pubsub.publisher"
+
+# cf-3 — APIs necessárias para Cloud Functions gen2 + Eventarc
+cf-3:
+	gcloud services enable \
+	  cloudfunctions.googleapis.com \
+	  cloudbuild.googleapis.com \
+	  eventarc.googleapis.com \
+	  run.googleapis.com
+
+# cf-4 — Deploy da Cloud Function (re-executar para atualizar código ou env vars)
+cf-4:
+	gcloud functions deploy olist-ingest-trigger \
+	  --gen2 \
+	  --runtime=python311 \
+	  --region=us-central1 \
+	  --source=ingestion/src \
+	  --entry-point=handle_event \
+	  --memory=512MiB \
+	  --timeout=300s \
+	  --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
+	  --trigger-event-filters="bucket=$(LANDING_BUCKET)" \
+	  --trigger-event-filters-path-pattern="name=olist/**" \
+	  --trigger-location=us \
+	  --service-account=$(CF_SA) \
+	  --set-env-vars="RAW_BASE_PATH=gs://$(BUCKET)/raw"
+
+# olist-upload — Depositar CSVs no landing bucket (aciona cf-4 via Eventarc)
+# Pré-requisito: data/olist/ com os CSVs extraídos do Kaggle (diretório gitignored).
+olist-upload:
+	gcloud storage cp \
+	  data/olist/*.csv \
+	  gs://$(LANDING_BUCKET)/olist/
+
+# =============================================================================
+# DADOS
+# =============================================================================
+
+# data-1 — External Tables no dataset raw
+# ATENÇÃO: requer todas as fontes no GCS antes de executar:
+#   - Olist: via olist-upload (após cf-4)
+#   - IBGE + BCB PIX: via make ingest-remote (GitHub Actions)
+data-1:
+	bash infra/setup_external_tables.sh
+
+# DEPRECADO — substituído por olist-upload + Cloud Function (ADR-011).
+# passo-3 copiava Parquets locais diretamente para o bucket raw.
+# passo-3:
+# 	gsutil -m cp -r data/raw/olist_* gs://$(BUCKET)/raw/
+
+# =============================================================================
+# OPCIONAL
+# =============================================================================
+
+# optional-1 — SA streamlit-reader (somente leitura em marts)
+optional-1:
+	gcloud iam service-accounts create streamlit-reader \
+	  --project=$(PROJECT) \
+	  --display-name="Streamlit Reader"
+	@echo "Aguardando propagação da SA no GCP..."
+	@sleep 10
+	gcloud projects add-iam-policy-binding $(PROJECT) \
+	  --role=roles/bigquery.dataViewer \
+	  --member=serviceAccount:streamlit-reader@$(PROJECT).iam.gserviceaccount.com
+	gcloud projects add-iam-policy-binding $(PROJECT) \
+	  --role=roles/bigquery.jobUser \
+	  --member=serviceAccount:streamlit-reader@$(PROJECT).iam.gserviceaccount.com
+	@echo "Gerando chave JSON..."
+	gcloud iam service-accounts keys create streamlit-key.json \
+	  --iam-account=streamlit-reader@$(PROJECT).iam.gserviceaccount.com
+	@echo "Copiando chave para o clipboard (evita exposição no scrollback do terminal)..."
+	@xclip -selection clipboard < streamlit-key.json
+	@rm streamlit-key.json
+	@echo "Chave copiada para o clipboard e deletada localmente."
+	@echo "Cole no painel do Streamlit Community Cloud: Secrets → gcp_service_account"
+	@echo ""
+	@echo "=== SECRET ADICIONAL NO STREAMLIT COMMUNITY CLOUD ==="
+	@echo "    gcp_dataset_marts = \"marts\""
+
+# =============================================================================
+# SEQUÊNCIA COMPLETA
+# =============================================================================
+
+# provision — infra base + buckets + WIF (executa o que não depende de dados no GCS)
+# Após concluir, seguir a sequência abaixo em ordem:
+#   make -f infra/Makefile.setup cf-1 cf-2 cf-3 cf-4   (Cloud Function)
+#   make -f infra/Makefile.setup olist-upload            (Olist → aciona CF)
+#   make ingest-remote                                   (IBGE + BCB PIX via Actions)
+#   make -f infra/Makefile.setup data-1                  (External Tables)
+#   make -f infra/Makefile.setup optional-1              (SA Streamlit, quando for ao ar)
+provision: base-1 base-2 base-3 ci-1 ci-2 ci-3
+	@echo ""
+	@echo "=== Provisionamento base concluído ==="
+	@echo "Próximos passos — executar em ordem:"
+	@echo "  make -f infra/Makefile.setup cf-1 cf-2 cf-3 cf-4"
+	@echo "  make -f infra/Makefile.setup olist-upload"
+	@echo "  make ingest-remote"
+	@echo "  make -f infra/Makefile.setup data-1"
+	@echo "  make -f infra/Makefile.setup optional-1   (quando for ao ar no Streamlit)"

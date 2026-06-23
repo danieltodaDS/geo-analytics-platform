@@ -3,23 +3,15 @@ include .env
 export
 endif
 
-.PHONY: pipeline-local pipeline-remote ingest-local ingest-remote transform-local transform-remote test streamlit auth setup-gcloud setup-external-tables cost
+.PHONY: pipeline-local pipeline-remote ingest-local ingest-remote transform-local transform-remote test streamlit auth cost
 
 auth:
+ifndef GCP_PROJECT
+	$(error GCP_PROJECT não definido — adicione ao .env)
+endif
 	gcloud auth login
-	gcloud auth application-default login
-
-setup-gcloud: auth
-	gcloud config set project data-pipeline-lab-497514
-	gcloud services list --enabled --filter="name:bigquery"
-	bq mk --dataset --location=US data-pipeline-lab-497514:raw
-	bq mk --dataset --location=US data-pipeline-lab-497514:staging
-	bq mk --dataset --location=US data-pipeline-lab-497514:intermediate
-	bq mk --dataset --location=US data-pipeline-lab-497514:marts
-	bq ls --project_id=data-pipeline-lab-497514
-
-setup-external-tables:
-	bash infra/setup_external_tables.sh
+	gcloud auth application-default login \
+	  --impersonate-service-account github-actions@$(GCP_PROJECT).iam.gserviceaccount.com
 
 # --- Local (executa na máquina, escreve em data/raw/ ou BQ via ADC) ---
 
