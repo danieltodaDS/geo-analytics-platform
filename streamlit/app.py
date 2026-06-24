@@ -222,9 +222,9 @@ def main() -> None:
             f"""
 **ℹ️ Sobre este app**
 
-Um problema comum em times de produto em e-commerce: como avaliar se a expansão para novos mercados foi bem-sucedida? Uma abordagem é comparar dois municípios — mas isso só é válido se eles forem realmente comparáveis entre si.
+Estimar o impacto real da expansão de um produto digital exige mais do que acompanhar o desempenho do município que recebeu o produto. É preciso saber o que teria acontecido sem a expansão (contrafactual), e para isso é necessário um controle válido. E um controle só é válido se for realmente parecido com o município tratado.
 
-Este app é um projeto end-to-end de Analytics Engineering que ajuda a identificar municípios similares a um escolhido, com base em análise estatística de 6 indicadores socioeconômicos e de e-commerce construídos a partir de dados públicos.
+Este app identifica municípios similares a um escolhido com base em 6 indicadores socioeconômicos e de e-commerce, construídos a partir de dados públicos via um pipeline ELT (BigQuery, dbt, GCS).
 
 **Fontes:** Olist (2018) · IBGE Censo 2022 · BCB PIX (2020–2026)
 

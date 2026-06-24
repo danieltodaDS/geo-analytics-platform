@@ -1,6 +1,6 @@
 # Geo Analytics Platform
 
-Pipeline de Analytics Engineering para mensuração de causalidade em expansão geográfica de produto digital, construído sobre dados públicos brasileiros no GCP.
+Pipeline ELT — ingestão, modelagem dimensional com dbt e visualização em Streamlit — para identificação de municípios comparáveis como base para análise de incrementalidade, construído sobre dados públicos brasileiros no GCP.
 
 **[→ Ver aplicação ao vivo](https://geo-analytics-platform-em9nziezhlvewacdnpztzm.streamlit.app/)**
 
@@ -8,24 +8,11 @@ Pipeline de Analytics Engineering para mensuração de causalidade em expansão 
 
 ## Problema de Negócio
 
-> "A expansão de um produto digital para novas regiões causou aumento nas métricas de negócio, ou elas já iriam crescer de qualquer jeito?"
+> A expansão de um produto digital para novas regiões aumentou as métricas de negócio — ou elas já cresceriam de qualquer forma?
 
-Responder essa pergunta exige causalidade — não correlação. Este projeto constrói a infraestrutura analítica completa para responder essa pergunta com rigor estatístico, usando dados públicos brasileiros como covariáveis e o dataset Olist como fonte de negócio.
+Este projeto constrói um pipeline ELT — ingestão, modelagem dimensional com dbt e visualização em Streamlit — sobre dados públicos brasileiros, com foco em identificar municípios comparáveis como base para análises de incrementalidade. A infraestrutura é real (BigQuery, dbt, GCS, GitHub Actions, Streamlit), mas os dados de negócio são o dataset público Olist (Kaggle). O objetivo é demonstrar o método, não responder a pergunta com dados de produção.
 
----
-
-## Fases do Projeto
-
-```
-Fase 1 — Analytics Engineering  ← concluída
-Ingestão → Raw Layer → dbt → Streamlit
-
-Fase 2 — Data Science            (roadmap)
-Matching Estatístico + Diferença em Diferenças
-
-Fase 3 — AI Engineering          (roadmap)
-Agentes de monitoramento e análise do experimento
-```
+As covariáveis são dados geográficos e socioeconômicos municipais, usados para enriquecer a análise de comparabilidade entre municípios.
 
 ---
 
@@ -43,12 +30,13 @@ Covariáveis Municipais
 
 Ingestão
 ├── Local:      make ingest-local → scripts Python → Parquet em data/raw/
-└── Produção:   GitHub Actions (workflow_dispatch) → scripts Python → GCS
+├── Produção (IBGE + BCB PIX):  GitHub Actions (workflow_dispatch) → scripts Python → GCS
+└── Produção (Olist):           upload CSV → landing bucket → Eventarc → Cloud Function → GCS
 
                     ↓
 
 Raw Layer — Google Cloud Storage
-gs://geo-analytics-platform-raw/raw/{fonte}/year=X/month=X/day=X/data.parquet
+gs://geo-analytics-platform-raw/raw/{fonte}/ingestion_date=YYYY-MM-DD/data.parquet
 
                     ↓
 
@@ -155,20 +143,6 @@ make cost   # BigQuery jobs (últimos 30 dias) + GCS storage
 
 ---
 
-## Escopo v1
-
-**Fonte de negócio:**
-- Olist — dataset Kaggle, período 2015–2018, carga batch única
-
-**Covariáveis municipais:**
-- IBGE Localidades — tabela referencial de todos os municípios brasileiros
-- IBGE Censo 2022 (SIDRA) — população, renda per capita, acesso à internet por município
-- BCB PIX — volume e quantidade de transações PIX por município (a partir de 2020)
-
-**Output:**
-- `mart_geo_analytics` — unidade municipal com métricas de negócio + covariáveis, pronto para o modelo causal da Fase 2
-
----
 
 ## Estrutura do Repositório
 
@@ -181,12 +155,12 @@ geo-analytics-platform/
 │   └── pipeline.yml        ← ingest + transform sequencial (workflow_dispatch)
 ├── docs/
 │   ├── adr/                ← decisões arquiteturais
-│   ├── normative/          ← convenções e regras de qualidade
-│   ├── roadmap.md
-│   └── backlog.md
-├── exploration/            ← notebooks exploratórios (gitignored)
+│   └── normative/          ← convenções e regras de qualidade
 ├── ingestion/
-│   ├── src/                ← scripts de ingestão por fonte
+│   ├── src/
+│   │   ├── olist.py, ibge_*.py, bcb_pix.py   ← scripts de ingestão por fonte
+│   │   ├── main.py                             ← entry point da Cloud Function (Olist)
+│   │   └── requirements.txt                    ← dependências da Cloud Function
 │   └── tests/
 ├── dbt/
 │   ├── models/
@@ -194,11 +168,13 @@ geo-analytics-platform/
 │   │   ├── intermediate/
 │   │   └── marts/
 │   ├── macros/
+│   ├── tests/              ← singular tests de volume mínimo
 │   ├── dbt_project.yml
 │   ├── profiles.yml
 │   └── packages.yml
 ├── infra/
-│   └── setup_external_tables.sh  ← DDL das External Tables (one-time)
+│   ├── Makefile.setup.example      ← template de provisionamento GCP (versionado)
+│   └── setup_external_tables.sh    ← DDL das External Tables (one-time)
 ├── streamlit/
 ├── Makefile
 └── pyproject.toml
@@ -212,5 +188,4 @@ geo-analytics-platform/
 |---|---|
 | [`docs/adr/`](docs/adr/) | Decisões arquiteturais com contexto e alternativas descartadas |
 | [`docs/normative/`](docs/normative/) | Convenções de código, qualidade de dados e contratos entre camadas |
-| [`docs/roadmap.md`](docs/roadmap.md) | Escopo, sequência de construção e fases futuras |
-| [`docs/backlog.md`](docs/backlog.md) | Itens pós-v1 (inferência causal, segmentação, agentes) |
+
