@@ -1,6 +1,6 @@
 # Geo Analytics Platform
 
-Pipeline ELT — ingestão, modelagem dimensional com dbt e visualização em Streamlit — para identificação de municípios comparáveis como base para análise de incrementalidade, construído sobre dados públicos brasileiros no GCP.
+Web App para identificação de municípios comparáveis como base para análise de incrementalidade, construído sobre um pipeline ELT com dados públicos brasileiros no GCP
 
 **[→ Ver aplicação ao vivo](https://geo-analytics-platform-em9nziezhlvewacdnpztzm.streamlit.app/)**
 
@@ -10,7 +10,7 @@ Pipeline ELT — ingestão, modelagem dimensional com dbt e visualização em St
 
 > A expansão de um produto digital para novas regiões aumentou as métricas de negócio — ou elas já cresceriam de qualquer forma?
 
-Este projeto constrói um pipeline ELT — ingestão, modelagem dimensional com dbt e visualização em Streamlit — sobre dados públicos brasileiros, com foco em identificar municípios comparáveis como base para análises de incrementalidade. A infraestrutura é real (BigQuery, dbt, GCS, GitHub Actions, Streamlit), mas os dados de negócio são o dataset público Olist (Kaggle). O objetivo é demonstrar o método, não responder a pergunta com dados de produção.
+Este projeto constrói um pipeline ELT abrangendo ingestão, modelagem dimensional com dbt e visualização em app Streamlit sobre dados públicos brasileiros, com foco em identificar municípios comparáveis como base para análises de incrementalidade. A infraestrutura é real (BigQuery, dbt, GCS, GitHub Actions, Streamlit), mas os dados de negócio são o dataset público Olist (Kaggle). O objetivo é demonstrar o método, não responder a pergunta com dados de produção.
 
 As covariáveis são dados geográficos e socioeconômicos municipais, usados para enriquecer a análise de comparabilidade entre municípios.
 
