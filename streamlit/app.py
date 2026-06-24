@@ -222,9 +222,11 @@ def main() -> None:
             f"""
 **ℹ️ Sobre este app**
 
-Estimar o impacto real da expansão de um produto digital exige mais do que acompanhar o desempenho do município que recebeu o produto. É preciso saber o que teria acontecido sem a expansão (contrafactual), e para isso é necessário um controle válido. E um controle só é válido se for realmente parecido com o município tratado.
+Medir o impacto de uma funcionalidade, campanha ou iniciativa de produto exige mais do que comparar métricas antes e depois da mudança. Para avaliar incrementalidade, é necessário encontrar grupos de comparação que possuam características semelhantes ao grupo analisado.
 
-Este app identifica municípios similares a um escolhido com base em 6 indicadores socioeconômicos e de e-commerce, construídos a partir de dados públicos via um pipeline ELT (BigQuery, dbt, GCS).
+Este app identifica municípios similares a um município selecionado utilizando indicadores socioeconômicos e de atividade econômica construídos a partir de dados públicos. O objetivo é demonstrar uma abordagem de matching para seleção de controles comparáveis, etapa fundamental em experimentação, avaliação de impacto e análises de causalidade.
+
+Os dados são integrados por meio de um pipeline ELT completo em BigQuery, dbt e GCS e disponibilizados em uma aplicação interativa construída com Streamlit.
 
 **Fontes:** Olist (2018) · IBGE Censo 2022 · BCB PIX (2020–2026)
 

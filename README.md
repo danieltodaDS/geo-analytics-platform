@@ -1,6 +1,6 @@
 # Geo Analytics Platform
 
-Web App para identificação de municípios comparáveis como base para análise de incrementalidade, construído sobre um pipeline ELT com dados públicos brasileiros no GCP
+Web App para identificação de municípios comparáveis como base para análises de impacto e incrementalidade, construído sobre um pipeline ELT com dados públicos brasileiros no GCP
 
 **[→ Ver aplicação ao vivo](https://geo-analytics-platform-em9nziezhlvewacdnpztzm.streamlit.app/)**
 
@@ -8,11 +8,19 @@ Web App para identificação de municípios comparáveis como base para análise
 
 ## Problema de Negócio
 
-> A expansão de um produto digital para novas regiões aumentou as métricas de negócio — ou elas já cresceriam de qualquer forma?
+Quando uma nova funcionalidade ou iniciativa de produto é lançada, como saber se a melhora observada foi realmente causada pela mudança?
 
-Este projeto constrói um pipeline ELT abrangendo ingestão, modelagem dimensional com dbt e visualização em app Streamlit sobre dados públicos brasileiros, com foco em identificar municípios comparáveis como base para análises de incrementalidade. A infraestrutura é real (BigQuery, dbt, GCS, GitHub Actions, Streamlit), mas os dados de negócio são o dataset público Olist (Kaggle). O objetivo é demonstrar o método, não responder a pergunta com dados de produção.
+Antes de medir impacto, é necessário encontrar grupos comparáveis que possam servir como referência para análise.
 
-As covariáveis são dados geográficos e socioeconômicos municipais, usados para enriquecer a análise de comparabilidade entre municípios.
+### Solução
+
+Este projeto demonstra a construção de uma plataforma analítica para identificação de municípios similares utilizando indicadores socioeconômicos e de atividade econômica.
+
+A solução integra ingestão, modelagem dimensional e disponibilização de dados por meio de BigQuery, dbt, GCS, GitHub Actions e Streamlit.
+
+Os dados de negócio são provenientes do dataset público Olist (Kaggle), enriquecidos com dados do IBGE e do Banco Central.
+
+**Observação**: o projeto tem foco na construção da infraestrutura analítica e na seleção de grupos comparáveis, não na estimação causal do impacto.
 
 ---
 
